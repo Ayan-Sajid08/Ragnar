@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
 
 export default function RegisterPage() {
     
@@ -21,7 +20,9 @@ export default function RegisterPage() {
             setError("Something went wrong. Please try again.")
             return
         }
-        setMessage("Registration successful! Please check your email to verify your account.")
+        else {
+            setMessage("Registration successful! Please check your email to verify your account.")
+        }
     }
 
     return (
