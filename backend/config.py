@@ -5,7 +5,9 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_secret_key: str
     database_url: str
-    
+    huggingface_api_key: str
+    voyage_api_key: str
+
     class Config:
         env_file = ".env"
 
