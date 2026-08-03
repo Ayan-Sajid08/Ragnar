@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { use } from "react"
+import { useEffect } from "react"
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
 
@@ -12,6 +13,30 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     const [loading, setLoading] = useState(false)
     const supabase = createClient()
     const [error, setError] = useState("")
+
+    async function fetchMessages() {
+        const { data, error } = await supabase
+            .from("messages")
+            .select("*")
+            .eq("conversation_id", id)
+            .order("created_at", { ascending: true })
+
+        if (data) {
+            setMessages(data.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            })))
+        }
+    }
+
+    useEffect(() => {
+        fetchMessages()
+    }, [id])
+
+    useEffect(() => {
+        // runs once when component mounts
+        fetchMessages()
+    }, []) // empty array means run once
 
     async function handleSubmit() {
         const { data: { session } } = await supabase.auth.getSession()
@@ -34,7 +59,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         })
 
         if (!response.ok) {
-            setError("Failed to send message.")
+            setMessages(prev => [...prev, {
+                role: "assistant",
+                content: "Something went wrong, please try later."
+            }])
             setLoading(false)
             return
         }

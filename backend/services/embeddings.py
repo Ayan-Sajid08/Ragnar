@@ -11,4 +11,5 @@ async def get_embeddings(texts: list[str]) -> list[list[float]]:
             json={"input": texts, "model": "voyage-3-lite"}
         )
         data = response.json()
+        print("Voyage response:", data)
         return [item["embedding"] for item in data["data"]]

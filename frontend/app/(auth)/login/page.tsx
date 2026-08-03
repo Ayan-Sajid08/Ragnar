@@ -21,7 +21,7 @@ export default function LoginPage() {
             setError("Incorrect email or password.")
             return
         }
-        router.push("/dashboard")
+        router.push("/upload")
     }
 
     return (
