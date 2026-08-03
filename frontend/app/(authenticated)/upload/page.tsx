@@ -23,7 +23,7 @@ export default function UploadPage() {
         const formData = new FormData()
         formData.append("file", file)
 
-        const response = await fetch("http://localhost:8000/documents/upload", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/upload`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`
@@ -39,7 +39,7 @@ export default function UploadPage() {
 
         const data = await response.json()
         setLoading(false)
-        router.push(`/chat/${data.document_id}`)
+        router.push(`/chat/${data.conversation_id}`)
     }
 
     return (

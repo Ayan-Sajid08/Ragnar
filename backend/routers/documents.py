@@ -31,6 +31,14 @@ async def upload_document(
     }).execute()
 
     document_id = doc_response.data[0]["id"]
+
+    conv_response = supabase.table("conversations").insert({
+        "user_id": user.id,
+        "document_id": document_id,
+        "title": file.filename
+    }).execute()
+
+    conversation_id = conv_response.data[0]["id"]
     
     text_chunks = extract_text(pdf_bytes)
     
@@ -51,4 +59,4 @@ async def upload_document(
 
     supabase.table("document_chunks").insert(chunks_to_insert).execute()
 
-    return {"message": "Document uploaded successfully", "document_id": document_id}
+    return {"message": "Document uploaded successfully", "conversation_id": conversation_id}

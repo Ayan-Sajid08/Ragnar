@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     database_url: str
     huggingface_api_key: str
     voyage_api_key: str
+    openrouter_api_key: str
+    openrouter_model: str
 
     class Config:
         env_file = ".env"
