@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { use } from "react"
-import { useEffect } from "react"
+import ReactMarkdown from "react-markdown"
+import { useRef, useEffect } from "react"
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
 
@@ -13,6 +14,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     const [loading, setLoading] = useState(false)
     const supabase = createClient()
     const [error, setError] = useState("")
+    const bottomRef = useRef<HTMLDivElement>(null)
 
     async function fetchMessages() {
         const { data, error } = await supabase
@@ -37,6 +39,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         // runs once when component mounts
         fetchMessages()
     }, []) // empty array means run once
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, [messages])  // runs every time messages changes
 
     async function handleSubmit() {
         const { data: { session } } = await supabase.auth.getSession()
@@ -101,12 +107,16 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                                         <p className="text-sm text-gray-400 capitalize">
                                             {message.role}
                                         </p>
-                                        <p className="mt-1 whitespace-pre-wrap">
-                                            {message.content}
-                                        </p>
+                                        <div className="mt-1 prose prose-invert prose-sm max-w-none">
+                                            <ReactMarkdown>
+                                                {message.content}
+                                            </ReactMarkdown>
+                                        </div>
+                                        
                                     </div>
                                 </div>
                             ))}
+                            <div ref={bottomRef} />
                         </div>
                     ) : (
                         <p className="text-gray-400">No messages yet.</p>
