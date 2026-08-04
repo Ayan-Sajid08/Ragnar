@@ -60,3 +60,23 @@ async def upload_document(
     supabase.table("document_chunks").insert(chunks_to_insert).execute()
 
     return {"message": "Document uploaded successfully", "conversation_id": conversation_id}
+
+@router.delete("/{document_id}")
+async def delete_document(
+    document_id: str,
+    user = Depends(get_current_user)
+):
+    document_response = supabase.table("documents").select("*").eq("id", document_id).execute()
+    if not document_response.data:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    document = document_response.data[0]
+    if document["user_id"] != user.id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    
+    file_path = document["file_url"]
+    supabase.storage.from_("documents").remove([file_path])
+
+    supabase.table("documents").delete().eq("id", document_id).execute()
+
+    return {"message": "Chat deleted successfully"}

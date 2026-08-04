@@ -13,7 +13,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     const [input, setInput] = useState("")
     const [loading, setLoading] = useState(false)
     const supabase = createClient()
-    const [error, setError] = useState("")
     const bottomRef = useRef<HTMLDivElement>(null)
 
     async function fetchMessages() {

@@ -2,6 +2,7 @@ import React from "react"
 import NewUploadButton from "@/components/NewUploadButton"
 import { createClient } from "@/lib/supabase/server"
 import ProfileButton from "@/components/ProfileButton"
+import DeleteButton from "@/components/ConversationItem";
 
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
@@ -15,19 +16,22 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
         <div className="flex h-screen">
             <aside className="w-64 h-screen bg-gray-900 text-gray-100 flex flex-col justify-between p-4">
                 <div className="flex flex-col gap-4">
-                    <header className="text-lg font-bold">Ragnar</header>
+                    <header className="text-xl font-bold">Ragnar</header>
                     <NewUploadButton />
                     <nav>
                         {(conversations?.length ?? 0) > 0 ? (
                             <ul className="flex flex-col gap-2">
                                 {(conversations ?? []).map((conversation) => (
                                     <li key={conversation.id}>
-                                        <a
-                                            href={`/chat/${conversation.id}`}
-                                            className="block w-full hover:bg-gray-700 text-gray-300 hover:text-gray-100 rounded-lg py-2 px-4 text-sm truncate"
-                                        >
-                                            {conversation.title}
-                                        </a>
+                                        <div className="flex items-center gap-1">
+                                            <a
+                                                href={`/chat/${conversation.id}`}
+                                                className="hover:bg-gray-700 text-gray-300 flex-1 hover:text-gray-100 rounded-lg py-2 px-4 text-sm truncate"
+                                            >
+                                                {conversation.title}
+                                            </a>
+                                            <DeleteButton documentId={conversation.document_id} />
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
