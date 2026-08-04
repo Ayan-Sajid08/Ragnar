@@ -39,6 +39,7 @@ export default function UploadPage() {
 
         const data = await response.json()
         setLoading(false)
+        window.location.href = `/chat/${data.conversation_id}`
         router.push(`/chat/${data.conversation_id}`)
     }
 
