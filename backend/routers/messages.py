@@ -63,7 +63,7 @@ async def create_message(request: MessageRequest, user=Depends(get_current_user)
             "content": f"""
 You are an AI assistant designed to help users understand and analyze an uploaded document.
 
-Document Context:
+Document Context (extracted from the pdf):
 {chunks_text}
 
 Rules:
@@ -102,6 +102,9 @@ Rules:
                 "messages": messages,
             },
         )
+
+    print("Status:", response.status_code)
+    print("Response:", response.text)
 
     if response.is_error:
         raise HTTPException(

@@ -111,7 +111,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                                                 {message.content}
                                             </ReactMarkdown>
                                         </div>
-                                        
+
                                     </div>
                                 </div>
                             ))}
@@ -129,6 +129,15 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+
+                                    if (!loading && input.trim()) {
+                                        handleSubmit();
+                                    }
+                                }
+                            }}
                             placeholder="Type your message..."
                         />
                         <button

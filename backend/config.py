@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     voyage_api_key: str
     openrouter_api_key: str
     openrouter_model: str
+    openrouter_embedding_model: str
 
     class Config:
         env_file = ".env"
