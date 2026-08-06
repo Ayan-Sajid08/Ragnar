@@ -1,3 +1,5 @@
+# Readme
+
 # What is Ragnar?
 Ragnar is a RAG-powered document chat application. Allowing users to quickly analyze and make queries about the documents they upload. It follows the traditional RAG pipeline, but not in the strict way. Instead of shutting down to document only, it can answer generally while maintaining confidence and being transparent when it generalized a response instead of getting it from the document. Currently only supports pdfs and has an OCR fallback for scanned pdfs. Instead of relying solely on the language model's pre-trained knowledge, it retrieves the most relevant information from the uploaded document using semantic vector search. The retrieved context, along with the conversation history and user query, is provided to the language model to generate accurate, document-grounded responses.
 
@@ -17,14 +19,14 @@ Ragnar is a RAG-powered document chat application. Allowing users to quickly ana
 
 # Setup
 
-## Backend
+### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
 python -m uvicorn main:app --reload
 ```
 
-## Frontend
+### Frontend
 ```bash
 cd frontend
 npm install
