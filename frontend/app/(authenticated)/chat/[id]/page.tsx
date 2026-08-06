@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/client"
 import { use } from "react"
 import ReactMarkdown from "react-markdown"
 import { useRef, useEffect } from "react"
+import dynamic from "next/dynamic"
+
+const PdfViewer = dynamic(
+    () => import("@/components/PdfViewer"),
+    { ssr: false }
+)
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
 
@@ -12,6 +18,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
     const [input, setInput] = useState("")
     const [loading, setLoading] = useState(false)
+    const [splitView, setSplitView] = useState(false)
+    const [pdfUrl, setPdfUrl] = useState("")
     const supabase = createClient()
     const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -30,18 +38,55 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         }
     }
 
-    useEffect(() => {
-        fetchMessages()
-    }, [id])
+    async function fetchPdfUrl() {
+        console.log("Fetching PDF URL for:", id)
+
+        const { data: conversation, error: conversationError } = await supabase
+            .from("conversations")
+            .select("document_id")
+            .eq("id", id)
+            .single()
+
+        console.log("Conversation:", conversation)
+        console.log("Conversation error:", conversationError)
+
+        if (!conversation) return
+
+        const { data: document, error: documentError } = await supabase
+            .from("documents")
+            .select("file_url")
+            .eq("id", conversation.document_id)
+            .single()
+
+        console.log("Document:", document)
+        console.log("Document error:", documentError)
+
+        if (!document) return
+
+        const { data, error } = await supabase.storage
+            .from("documents")
+            .createSignedUrl(document.file_url, 3600)
+
+        console.log("Signed URL:", data)
+        console.log("Signed URL error:", error)
+
+        if (data?.signedUrl) {
+            setPdfUrl(data.signedUrl)
+        }
+    }
 
     useEffect(() => {
-        // runs once when component mounts
         fetchMessages()
-    }, []) // empty array means run once
+        fetchPdfUrl()
+    }, [id])
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages])  // runs every time messages changes
+
+    useEffect(() => {
+        console.log(pdfUrl)
+    }, [pdfUrl])
 
     async function handleSubmit() {
         const { data: { session } } = await supabase.auth.getSession()
@@ -78,12 +123,22 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     }
 
     return (
-        <div className="h-screen bg-gray-950 flex justify-center">
-            <div className="w-full max-w-4xl h-full flex flex-col">
-                <div className="border-b border-gray-800 px-6 py-4">
+        <div className="h-screen bg-gray-950 flex">
+            <div
+                className={`h-full flex flex-col transition-all duration-300 ${splitView ? "w-1/2 border-r border-gray-800" : "w-full max-w-4xl mx-auto"
+                    }`}
+            >
+                <div className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-gray-100">
                         Chat
                     </h1>
+
+                    <button
+                        onClick={() => setSplitView(!splitView)}
+                        className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm"
+                    >
+                        {splitView ? "Hide Document" : "Show Document"}
+                    </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-6 text-gray-100">
@@ -154,6 +209,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                     </div>
                 </div>
             </div>
+            {splitView && (
+                <div className="w-1/2 h-full bg-gray-900">
+                    {pdfUrl ? (
+                        <PdfViewer url={pdfUrl} />
+                    ) : (
+                        <div className="h-full flex items-center justify-center text-gray-400">
+                            Loading document...
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
