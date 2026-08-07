@@ -1,7 +1,7 @@
 import fitz # pymupdf
 import numpy as np
 import cv2
-from app.services.mistral_ocr import extract_text_from_image
+from services.mistral_ocr import extract_text_from_image
 
 CHUNK_SIZE = 2000
 CHUNK_OVERLAP = 400
