@@ -1,13 +1,10 @@
 import fitz # pymupdf
 import numpy as np
 import cv2
-
-from rapidocr import RapidOCR
+from app.services.mistral_ocr import extract_text_from_image
 
 CHUNK_SIZE = 2000
 CHUNK_OVERLAP = 400
-
-ocr = RapidOCR()
 
 def extract_text(pdf_bytes : bytes) -> list[dict]:
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -16,7 +13,7 @@ def extract_text(pdf_bytes : bytes) -> list[dict]:
     for page_num, page in enumerate(doc):
         text = page.get_text("text").strip()
 
-        if not text:
+        if len(text) < 10:
             print(f"OCR page {page_num + 1}")
             text = ocr_page(page)
         chunks = chunk_text(text, page_num, chunk_index)
@@ -25,7 +22,7 @@ def extract_text(pdf_bytes : bytes) -> list[dict]:
     return text_chunks
 
 def ocr_page(page):
-    pix = page.get_pixmap(dpi=200)
+    pix = page.get_pixmap(dpi=150)
 
     img = np.frombuffer(pix.samples, dtype=np.uint8)
     img = img.reshape((pix.height, pix.width, pix.n))
@@ -35,12 +32,7 @@ def ocr_page(page):
     elif pix.n == 1:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
-    result = ocr(img)
-
-    if not result or not result.txts:
-        return ""
-
-    return "\n".join(result.txts)
+    return extract_text_from_image(img)
 
 def chunk_text(text: str, page_number: int, start_index: int) -> list[dict]:
     chunks = []

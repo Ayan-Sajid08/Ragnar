@@ -13,7 +13,7 @@ Ragnar is a RAG-powered document chat application. Allowing users to quickly ana
 | Vector Search | PostgreSQL + pgvector (via Supabase) |
 | Embeddings | OpenRouter Embedding Model |
 | LLM | OpenRouter Chat Models |
-| OCR | RapidOCR |
+| OCR | MistralOCR |
 
 # Setup
 

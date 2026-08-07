@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     openrouter_api_key: str
     openrouter_model: str
     openrouter_embedding_model: str
+    mistral_api_key: str
+    mistral_ocr_model: str = "mistral-ocr-latest"
 
     class Config:
         env_file = ".env"
