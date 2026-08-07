@@ -114,4 +114,4 @@ py-modules = [
 ]
 
 [tool.setuptools.packages.find]
-include = []
+include = ["services*"]

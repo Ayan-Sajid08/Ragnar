@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
@@ -11,6 +11,11 @@ export default function UploadPage() {
     const [error, setError] = useState("")
     const supabase = createClient()
     const router = useRouter()
+
+    useEffect(() => {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/health`)
+            .catch(() => { })
+    }, [])
 
     async function handleSubmit() {
         const { data: { session } } = await supabase.auth.getSession()
