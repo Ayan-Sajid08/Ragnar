@@ -3,6 +3,7 @@ import NewUploadButton from "@/components/NewUploadButton"
 import { createClient } from "@/lib/supabase/server"
 import ProfileButton from "@/components/ProfileButton"
 import DeleteButton from "@/components/ConversationItem";
+import Image from "next/image"
 
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
@@ -16,7 +17,18 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
         <div className="flex h-screen">
             <aside className="w-64 h-screen bg-gray-900 text-gray-100 flex flex-col justify-between p-4">
                 <div className="flex flex-col gap-4">
-                    <header className="text-xl font-bold">Ragnar</header>
+                    <header className="flex items-center select-none">
+                        <Image
+                            src="/logo.png"
+                            alt="Ragnar Logo"
+                            width={50}
+                            height={50}
+                            priority
+                        />
+                        <span className="-ml-4 text-2xl font-bold tracking-tight">
+                            agnar
+                        </span>
+                    </header>
                     <NewUploadButton />
                     <nav>
                         {(conversations?.length ?? 0) > 0 ? (
