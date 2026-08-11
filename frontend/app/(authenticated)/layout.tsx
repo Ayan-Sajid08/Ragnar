@@ -1,5 +1,5 @@
 import React from "react"
-import NewUploadButton from "@/components/NewUploadButton"
+import NewChatButton from "@/components/NewChatButton"
 import { createClient } from "@/lib/supabase/server"
 import ProfileButton from "@/components/ProfileButton"
 import DeleteButton from "@/components/ConversationItem";
@@ -29,7 +29,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                             agnar
                         </span>
                     </header>
-                    <NewUploadButton />
+                    <NewChatButton />
                     <nav>
                         {(conversations?.length ?? 0) > 0 ? (
                             <ul className="flex flex-col gap-2">

@@ -92,7 +92,7 @@ export default function RegisterPage() {
 
                 <button
                     onClick={handleGoogleRegister}
-                    className="w-full bg-white hover:bg-gray-100 text-black rounded-lg py-2 px-4 flex items-center justify-center gap-3"
+                    className="w-full bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-lg py-2 px-4 flex items-center justify-center gap-3 border border-gray-700"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
