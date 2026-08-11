@@ -39,7 +39,7 @@ export default function DeleteButton({ conversationId }: { conversationId: strin
         )
 
         if (response.ok) {
-            router.push("/upload")
+            router.push("/new_chat")
             router.refresh()
         }
     }

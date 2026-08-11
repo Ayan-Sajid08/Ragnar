@@ -6,7 +6,6 @@ from services import upload
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-
 @router.post("/upload")
 async def upload_document(
     conversation_id: str,
