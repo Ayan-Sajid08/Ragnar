@@ -4,25 +4,43 @@ import { Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
-export default function DeleteButton({ documentId }: { documentId: string }) {
+export default function DeleteButton({ conversationId }: { conversationId: string }) {
+
     const router = useRouter()
     const supabase = createClient()
 
     async function handleDelete() {
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        const confirmed = window.confirm("Are you sure you want to delete this document?")
+
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this conversation?"
+        )
+
         if (!confirmed) return
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/${documentId}`, {
-            method: "DELETE",
-            headers: {
-                "Authorization": `Bearer ${token}`
+        const {
+            data: { session }
+        } = await supabase.auth.getSession()
+
+        const token = session?.access_token
+
+        if (!token) {
+            return
+        }
+
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/conversations/${conversationId}`,
+            {
+                method: "DELETE",
+
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
             }
-        })
+        )
 
         if (response.ok) {
-            window.location.href = "/upload"
+            router.push("/upload")
+            router.refresh()
         }
     }
 

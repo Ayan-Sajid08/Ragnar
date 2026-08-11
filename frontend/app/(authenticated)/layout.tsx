@@ -29,6 +29,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                             agnar
                         </span>
                     </header>
+                    <h3 className="ml-4 text-gray-400 text-xs">AI-Powered Document Assistant</h3>
                     <NewChatButton />
                     <nav>
                         {(conversations?.length ?? 0) > 0 ? (
@@ -42,7 +43,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                                             >
                                                 {conversation.title}
                                             </a>
-                                            <DeleteButton documentId={conversation.document_id} />
+                                            <DeleteButton conversationId={conversation.id} />
                                         </div>
                                     </li>
                                 ))}
