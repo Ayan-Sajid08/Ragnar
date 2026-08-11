@@ -1,23 +1,29 @@
 # What is Ragnar?
-Ragnar is a RAG-powered document chat application. Allowing users to quickly analyze and make queries about the documents they upload. It follows the traditional RAG pipeline, but not in the strict way. Instead of shutting down to document only, it can answer generally while maintaining confidence and being transparent when it generalized a response instead of getting it from the document. Currently only supports pdfs and has an OCR fallback for scanned pdfs. Instead of relying solely on the language model's pre-trained knowledge, it retrieves the most relevant information from the uploaded document using semantic vector search. The retrieved context, along with the conversation history and user query, is provided to the language model to generate accurate, document-grounded responses.
+
+Ragnar is a RAG-powered document chat application. It allows users to upload multiple PDFs to a conversation, analyze them, and make queries about their contents.
+
+It follows the traditional RAG pipeline, but not in the strict way. Instead of shutting down to document-only answers, it can answer generally while maintaining confidence and being transparent when it generalized a response instead of getting it from the documents.
+
+Currently, Ragnar supports PDFs and has an OCR fallback for scanned PDFs. Instead of relying solely on the language model's pre-trained knowledge, it retrieves the most relevant information from the uploaded documents using semantic vector search. The retrieved context, along with the conversation history and user query, is provided to the language model to generate accurate, context-aware responses.
 
 # Tech Stack
 
-| Layer | Technology |
-|--------|------------|
-| Frontend | Next.js |
-| Backend API | FastAPI |
-| Authentication | Supabase Auth |
-| File Storage | Supabase Storage |
-| Database | Supabase PostgreSQL |
-| Vector Search | PostgreSQL + pgvector (via Supabase) |
-| Embeddings | OpenRouter Embedding Model |
-| LLM | OpenRouter Chat Models |
-| OCR | MistralOCR |
+| Layer          | Technology                           |
+| -------------- | ------------------------------------ |
+| Frontend       | Next.js                              |
+| Backend API    | FastAPI                              |
+| Authentication | Supabase Auth                        |
+| File Storage   | Supabase Storage                     |
+| Database       | Supabase PostgreSQL                  |
+| Vector Search  | PostgreSQL + pgvector (via Supabase) |
+| Embeddings     | OpenRouter Embedding Model           |
+| LLM            | OpenRouter Chat Models               |
+| OCR            | MistralOCR                           |
 
 # Setup
 
 ### Backend
+
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -25,36 +31,46 @@ python -m uvicorn main:app --reload
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-
 # Features
-- Main
-	- Uploading the pdf.
-	- Summarizing.
-	- Chatting with context of the pdf.
-	- Follow up abilities and basic per chat memory.
-- QoL
-	- Autoscroll
-	- Delete conversations
+
+* Main
+
+  * Uploading multiple PDFs per conversation.
+  * Viewing uploaded PDFs directly in the chat.
+  * Summarizing documents.
+  * Chatting with context from uploaded documents.
+  * Follow-up abilities and basic per-chat memory.
+  * General questions when appropriate.
+* QoL
+
+  * Autoscroll.
+  * Rename conversations.
+  * Delete conversations.
+  * Add documents without leaving the current chat.
 
 # ENV Variables
-- Backend
-	- SUPABASE_URL
-	- SUPABASE_SECRET_KEY
-	- DATABASE_URL
-	- ALLOWED_ORIGINS
-	- OPENROUTER_API_KEY
-	- OPENROUTER_MODEL
-	- OPENROUTER_EMBEDDING_MODEL
-- Frontend
-	- NEXT_PUBLIC_SUPABASE_URL
-	- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-	- NEXT_PUBLIC_API_URL (Backend url)
+
+* Backend
+
+  * SUPABASE_URL
+  * SUPABASE_SECRET_KEY
+  * DATABASE_URL
+  * ALLOWED_ORIGINS
+  * OPENROUTER_API_KEY
+  * OPENROUTER_MODEL
+  * OPENROUTER_EMBEDDING_MODEL
+* Frontend
+
+  * NEXT_PUBLIC_SUPABASE_URL
+  * NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  * NEXT_PUBLIC_API_URL (Backend url)
 
 # Architecture
 
@@ -62,7 +78,7 @@ npm run dev
 
 ### 1. Document Upload
 
-The user uploads a PDF through the Next.js frontend. The file is stored in Supabase Storage, while document metadata is stored in the database.
+The user uploads a PDF through the Next.js frontend. The file is stored in Supabase Storage, while document metadata is stored in the database. Multiple documents can be attached to the same conversation.
 
 ### 2. Text Extraction
 
@@ -78,7 +94,7 @@ Each chunk is converted into a numerical vector (embedding) using an embedding m
 
 ### 5. Vector Storage
 
-Each embedding is stored in the database alongside its corresponding text chunk and document identifier. This creates a searchable knowledge base for the uploaded document.
+Each embedding is stored in the database alongside its corresponding text chunk and document identifier. This creates a searchable knowledge base for the uploaded documents.
 
 ### 6. User Query Processing
 
@@ -92,10 +108,10 @@ The query embedding is compared against the stored document embeddings using vec
 
 The backend constructs a prompt containing:
 
-- A system prompt defining the assistant's behavior.
-- The retrieved document context.
-- Recent conversation history.
-- The current user question.
+* A system prompt defining the assistant's behavior.
+* The retrieved document context.
+* Recent conversation history.
+* The current user question.
 
 This gives the language model both the relevant document information and conversational context.
 
@@ -103,9 +119,11 @@ This gives the language model both the relevant document information and convers
 
 The prompt is sent to an OpenRouter language model. If the primary model is unavailable or fails, the system automatically retries using a fallback model.
 
+The model can answer using retrieved document context or general knowledge when appropriate, while remaining transparent when the response is not directly supported by the documents.
+
 ### 10. Conversation Storage
 
-The generated response is saved in the conversation history, allowing future questions to maintain context and enabling multi-turn interactions.
+The generated response is saved in the conversation history, allowing future questions to maintain context and enabling multi-turn interactions. Conversations can also be renamed or deleted.
 
 ## Overall Flow
 

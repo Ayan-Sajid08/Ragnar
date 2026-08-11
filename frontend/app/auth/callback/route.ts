@@ -12,5 +12,5 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return NextResponse.redirect(new URL("/upload", request.url))
+  return NextResponse.redirect(new URL("/new_chat", request.url))
 }

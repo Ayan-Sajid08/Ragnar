@@ -10,33 +10,41 @@ import httpx
 router = APIRouter(prefix="/messages", tags=["messages"])
 
 @router.post("/")
-async def create_message(request: MessageRequest, user=Depends(get_current_user)):
-
+async def create_message(
+    request: MessageRequest,
+    user=Depends(get_current_user)
+):
     conversation = (
         supabase.table("conversations")
         .select("*")
         .eq("id", request.conversation_id)
+        .eq("user_id", user.id)
         .single()
         .execute()
     )
 
     if not conversation.data:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-
-    document_id = conversation.data["document_id"]
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found"
+        )
 
     embeddings = await get_embeddings([request.content])
     user_question_embedding = embeddings[0]
 
     similar_chunks = await search_similar_chunks(
         user_question_embedding,
-        document_id,
+        request.conversation_id,
+        request.document_ids,
     )
 
     chunks_text = "\n\n".join(
-        chunk.get("content", chunk.get("text", ""))
+        f"[Document: {chunk['document_name']} | Page: {chunk['page_number']}]\n"
+        f"{chunk['content']}"
         for chunk in (similar_chunks or [])
         if chunk
+        and chunk.get("page_number") is not None
+        and chunk.get("document_name") is not None
     )
 
     if not chunks_text:
@@ -61,23 +69,23 @@ async def create_message(request: MessageRequest, user=Depends(get_current_user)
         {
             "role": "system",
             "content": f"""
-You are an AI assistant designed to help users understand and analyze an uploaded document.
+You are an AI assistant designed to help users understand and analyze the documents uploaded to the current conversation.
 
 Document Context (extracted from the pdf):
 {chunks_text}
 
 Rules:
-- The uploaded document is your primary source of truth.
+- The uploaded documents are your primary source of truth.
 - If the user's question is about the document, answer using the document context.
 - You may make reasonable inferences that logically follow from the document, but clearly distinguish between facts and inferences.
 - Never invent or assume information that is not supported by the document.
 - If the document does not contain enough information to answer a document-related question, clearly state that.
-- If the user's question is unrelated to the uploaded document, answer it using your general knowledge.
-- Whenever you answer using general knowledge instead of the uploaded document, append the following notice exactly as written:
+- If the user's question is unrelated to the uploaded documents, answer it using your general knowledge.
+- Whenever you answer using general knowledge instead of the uploaded documents, append the following notice exactly as written:
 
-**Note:** This information is not from the uploaded document. It is a general knowledge answer. If you're looking for something specific in the document, let me know and I'll answer using it.
+**Note:** This information is not from the uploaded documents. It is a general knowledge answer. If you're looking for something specific in the documents, let me know and I'll answer using them.
 
-- Do not append the notice if your answer is based on the uploaded document.
+- Do not append the notice if your answer is based on the uploaded documents.
 - Keep responses concise unless the user asks for more detail.
 """.strip(),
         }

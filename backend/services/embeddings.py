@@ -3,6 +3,7 @@ import httpx
 
 OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings"
 
+
 async def get_embeddings(texts: list[str]) -> list[list[float]]:
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
@@ -18,15 +19,6 @@ async def get_embeddings(texts: list[str]) -> list[list[float]]:
                 "encoding_format": "float",
             },
         )
-
-    if response.is_error:
-        print(response.status_code)
-        print(response.text)
-        response.raise_for_status()
-
-    data = response.json()
-
-    print("OpenRouter embedding complete")
 
     if response.is_error:
         print(response.status_code)

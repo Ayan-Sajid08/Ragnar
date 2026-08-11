@@ -3,10 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from routers import documents
 from routers import messages
+from routers.conversations import router as conversations_router
 
 app = FastAPI()
 
 app.include_router(documents.router)
+app.include_router(conversations_router)
 
 app.add_middleware(
     CORSMiddleware,
