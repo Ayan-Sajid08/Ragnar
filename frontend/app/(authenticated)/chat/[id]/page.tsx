@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, use } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import dynamic from "next/dynamic";
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Trash2, Download } from "lucide-react"
 
 const PdfEditor = dynamic(() => import("@/components/PdfEditor"), {
     ssr: false,
@@ -108,6 +108,58 @@ export default function ChatPage({
 
         if (data) {
             setDocuments(data);
+        }
+    }
+
+    async function handleDeleteDocument() {
+        if (!selectedDocument) return
+
+        const confirmed = window.confirm(
+            `Remove "${selectedDocument.name}" from this chat?`
+        )
+
+        if (!confirmed) return
+
+        const {
+            data: { session }
+        } = await supabase.auth.getSession()
+
+        const token = session?.access_token
+
+        if (!token) {
+            alert("You are not authenticated.")
+            return
+        }
+
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/documents/${selectedDocument.id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            )
+
+            if (!response.ok) {
+                console.error("Failed to delete document")
+                alert("Failed to remove document.")
+                return
+            }
+
+            // Remove from local document list
+            setDocuments(prev =>
+                prev.filter(document => document.id !== selectedDocument.id)
+            )
+
+            // Clear the viewer
+            setSelectedDocument(null)
+            setPdfUrl("")
+
+        } catch (error) {
+            console.error("Delete document error:", error)
+            alert("Something went wrong while removing the document.")
         }
     }
 
@@ -264,6 +316,38 @@ export default function ChatPage({
             console.error("Rename error:", error);
         } finally {
             setSavingTitle(false);
+        }
+    }
+
+    async function handleDownloadDocument() {
+        if (!selectedDocument || !pdfUrl) return
+
+        try {
+            const response = await fetch(pdfUrl)
+
+            if (!response.ok) {
+                throw new Error("Failed to download document")
+            }
+
+            const blob = await response.blob()
+
+            const blobUrl = URL.createObjectURL(blob)
+
+            const link = document.createElement("a")
+            link.href = blobUrl
+            link.download = selectedDocument.name
+            link.style.display = "none"
+
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+
+            setTimeout(() => {
+                URL.revokeObjectURL(blobUrl)
+            }, 1000)
+
+        } catch (error) {
+            console.error("Download error:", error)
         }
     }
 
@@ -539,8 +623,8 @@ export default function ChatPage({
                                                     setDocumentMenuOpen(false)
                                                 }}
                                                 className={`w-full text-left px-3 py-2 text-sm transition ${!selectedDocument
-                                                        ? "bg-gray-700 text-gray-100"
-                                                        : "text-gray-300 hover:bg-gray-700"
+                                                    ? "bg-gray-700 text-gray-100"
+                                                    : "text-gray-300 hover:bg-gray-700"
                                                     }`}
                                             >
                                                 None
@@ -555,8 +639,8 @@ export default function ChatPage({
                                                         setDocumentMenuOpen(false)
                                                     }}
                                                     className={`w-full text-left px-3 py-2 text-sm truncate transition ${selectedDocument?.id === document.id
-                                                            ? "bg-gray-700 text-gray-100"
-                                                            : "text-gray-300 hover:bg-gray-700"
+                                                        ? "bg-gray-700 text-gray-100"
+                                                        : "text-gray-300 hover:bg-gray-700"
                                                         }`}
                                                     title={document.name}
                                                 >
@@ -570,6 +654,31 @@ export default function ChatPage({
                                 )}
 
                             </div>
+
+                            {selectedDocument && (
+                                <button
+                                    type="button"
+                                    onClick={handleDownloadDocument}
+                                    disabled={!pdfUrl}
+                                    className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 disabled:text-gray-600 text-gray-300 transition"
+                                    title="Download document"
+                                    aria-label="Download document"
+                                >
+                                    <Download size={16} />
+                                </button>
+                            )}
+
+                            {selectedDocument && (
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteDocument}
+                                    className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-red-900/50 text-gray-300 hover:text-red-400 transition"
+                                    title="Remove document from chat"
+                                    aria-label="Remove document from chat"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
 
                             <button
                                 onClick={() => fileInputRef.current?.click()}
