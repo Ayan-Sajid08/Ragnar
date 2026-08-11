@@ -13,7 +13,7 @@ def extract_text(pdf_bytes : bytes) -> list[dict]:
     for page_num, page in enumerate(doc):
         text = page.get_text("text").strip()
 
-        if len(text) < 10:
+        if len(text) < 50: # If the extracted text is too short, perform OCR
             print(f"OCR page {page_num + 1}")
             text = ocr_page(page)
         chunks = chunk_text(text, page_num, chunk_index)

@@ -1,217 +1,181 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef, use } from "react"
-import { createClient } from "@/lib/supabase/client"
-import ReactMarkdown from "react-markdown"
-import dynamic from "next/dynamic"
+import { useState, useEffect, useRef, use } from "react";
+import { createClient } from "@/lib/supabase/client";
+import ReactMarkdown from "react-markdown";
+import dynamic from "next/dynamic";
+import { ChevronDown } from "lucide-react"
 
-const PdfViewer = dynamic(
-    () => import("@/components/PdfViewer"),
-    { ssr: false }
-)
+const PdfEditor = dynamic(() => import("@/components/PdfEditor"), {
+    ssr: false,
+});
 
 type Message = {
-    role: string
-    content: string
-}
+    role: string;
+    content: string;
+};
 
 type Document = {
-    id: string
-    name: string
-    file_url: string
-    file_type: string
-}
+    id: string;
+    name: string;
+    file_url: string;
+    file_type: string;
+};
 
 export default function ChatPage({
-    params
+    params,
 }: {
-    params: Promise<{ id: string }>
+    params: Promise<{ id: string }>;
 }) {
+    const { id } = use(params);
 
-    const { id } = use(params)
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const [messages, setMessages] = useState<Message[]>([])
-    const [input, setInput] = useState("")
-    const [loading, setLoading] = useState(false)
+    const [splitView, setSplitView] = useState(false);
 
-    const [splitView, setSplitView] = useState(false)
+    const [chatTitle, setChatTitle] = useState("Chat");
+    const [editingTitle, setEditingTitle] = useState(false);
+    const [titleInput, setTitleInput] = useState("Chat");
+    const [savingTitle, setSavingTitle] = useState(false);
 
-    const [chatTitle, setChatTitle] = useState("Chat")
-    const [editingTitle, setEditingTitle] = useState(false)
-    const [titleInput, setTitleInput] = useState("Chat")
-    const [savingTitle, setSavingTitle] = useState(false)
+    const [documents, setDocuments] = useState<Document[]>([]);
+    const [selectedDocument, setSelectedDocument] = useState<Document | null>(
+        null,
+    );
 
-    const [documents, setDocuments] = useState<Document[]>([])
-    const [selectedDocument, setSelectedDocument] =
-        useState<Document | null>(null)
+    const [pdfUrl, setPdfUrl] = useState("");
+    const [loadingPdf, setLoadingPdf] = useState(false);
 
-    const [pdfUrl, setPdfUrl] = useState("")
-    const [loadingPdf, setLoadingPdf] = useState(false)
+    const supabase = createClient();
+    const bottomRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
 
-    const supabase = createClient()
-    const bottomRef = useRef<HTMLDivElement>(null)
-    const fileInputRef = useRef<HTMLInputElement>(null)
-    const [uploading, setUploading] = useState(false)
-
-    // -------------------------
-    // Fetch conversation
-    // -------------------------
+    const [documentMenuOpen, setDocumentMenuOpen] = useState(false);
 
     async function fetchConversation() {
-
         const { data, error } = await supabase
             .from("conversations")
             .select("title")
             .eq("id", id)
-            .single()
+            .single();
 
         if (error) {
-            console.error("Error fetching conversation:", error)
-            return
+            console.error("Error fetching conversation:", error);
+            return;
         }
 
         if (data) {
-            setChatTitle(data.title || "Chat")
+            setChatTitle(data.title || "Chat");
         }
     }
 
-    // -------------------------
-    // Fetch messages
-    // -------------------------
-
     async function fetchMessages() {
-
         const { data, error } = await supabase
             .from("messages")
             .select("*")
             .eq("conversation_id", id)
-            .order("created_at", { ascending: true })
+            .order("created_at", { ascending: true });
 
         if (error) {
-            console.error("Error fetching messages:", error)
-            return
+            console.error("Error fetching messages:", error);
+            return;
         }
 
         if (data) {
             setMessages(
-                data.map(msg => ({
+                data.map((msg) => ({
                     role: msg.role,
-                    content: msg.content
-                }))
-            )
+                    content: msg.content,
+                })),
+            );
         }
     }
 
-
-    // -------------------------
-    // Fetch documents
-    // -------------------------
-
     async function fetchDocuments() {
-
         const { data, error } = await supabase
             .from("documents")
             .select("id, name, file_url, file_type")
             .eq("conversation_id", id)
-            .order("created_at", { ascending: true })
+            .order("created_at", { ascending: true });
 
         if (error) {
-            console.error("Error fetching documents:", error)
-            return
+            console.error("Error fetching documents:", error);
+            return;
         }
 
         if (data) {
-            setDocuments(data)
+            setDocuments(data);
         }
     }
 
-
-    // -------------------------
-    // Open document
-    // -------------------------
-
     async function openDocument(document: Document) {
-
-        setSelectedDocument(document)
-        setPdfUrl("")
-        setLoadingPdf(true)
+        setSelectedDocument(document);
+        setPdfUrl("");
+        setLoadingPdf(true);
 
         const { data, error } = await supabase.storage
             .from("documents")
-            .createSignedUrl(document.file_url, 3600)
+            .createSignedUrl(document.file_url, 3600);
 
         if (error) {
-            console.error("Error creating signed URL:", error)
-            setLoadingPdf(false)
-            return
+            console.error("Error creating signed URL:", error);
+            setLoadingPdf(false);
+            return;
         }
 
         if (data?.signedUrl) {
-            setPdfUrl(data.signedUrl)
+            setPdfUrl(data.signedUrl);
         }
 
-        setLoadingPdf(false)
+        setLoadingPdf(false);
     }
 
-
-    // -------------------------
-    // Initial loading
-    // -------------------------
-
     useEffect(() => {
-        fetchMessages()
-        fetchDocuments()
-        fetchConversation()
-    }, [id])
-
-
-    // -------------------------
-    // Scroll to bottom
-    // -------------------------
+        fetchMessages();
+        fetchDocuments();
+        fetchConversation();
+    }, [id]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({
-            behavior: "smooth"
-        })
-    }, [messages])
-
-    // -------------------------
-    // Upload document
-    // -------------------------
+            behavior: "smooth",
+        });
+    }, [messages]);
 
     async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
-
-        const file = event.target.files?.[0]
+        const file = event.target.files?.[0];
 
         if (!file) {
-            return
+            return;
         }
 
         if (file.type !== "application/pdf") {
-            alert("Please select a PDF file.")
-            event.target.value = ""
-            return
+            alert("Please select a PDF file.");
+            event.target.value = "";
+            return;
         }
 
         const {
-            data: { session }
-        } = await supabase.auth.getSession()
+            data: { session },
+        } = await supabase.auth.getSession();
 
-        const token = session?.access_token
+        const token = session?.access_token;
 
         if (!token) {
-            alert("You are not authenticated.")
-            event.target.value = ""
-            return
+            alert("You are not authenticated.");
+            event.target.value = "";
+            return;
         }
 
-        setUploading(true)
+        setUploading(true);
 
         try {
+            const formData = new FormData();
 
-            const formData = new FormData()
-
-            formData.append("file", file)
+            formData.append("file", file);
 
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/documents/upload?conversation_id=${encodeURIComponent(id)}`,
@@ -219,259 +183,215 @@ export default function ChatPage({
                     method: "POST",
 
                     headers: {
-                        "Authorization": `Bearer ${token}`
+                        Authorization: `Bearer ${token}`,
                     },
 
-                    body: formData
-                }
-            )
+                    body: formData,
+                },
+            );
 
             if (!response.ok) {
+                const errorText = await response.text();
 
-                const errorText = await response.text()
+                console.error("Upload failed:", errorText);
 
-                console.error("Upload failed:", errorText)
+                alert("Failed to upload document.");
 
-                alert("Failed to upload document.")
-
-                return
+                return;
             }
 
-            await response.json()
+            await response.json();
 
-            // Refresh document list
-            await fetchDocuments()
-
+            await fetchDocuments();
         } catch (error) {
+            console.error("Upload error:", error);
 
-            console.error("Upload error:", error)
-
-            alert("Something went wrong while uploading the document.")
-
+            alert("Something went wrong while uploading the document.");
         } finally {
+            setUploading(false);
 
-            setUploading(false)
-
-            // Allow selecting the same file again
-            event.target.value = ""
-
+            event.target.value = "";
         }
     }
 
-    // -------------------------
-    // Rename conversation
-    // -------------------------
-
     async function saveTitle() {
-
-        const newTitle = titleInput.trim()
+        const newTitle = titleInput.trim();
 
         if (!newTitle || savingTitle) {
-            return
+            return;
         }
 
         const {
-            data: { session }
-        } = await supabase.auth.getSession()
+            data: { session },
+        } = await supabase.auth.getSession();
 
-        const token = session?.access_token
+        const token = session?.access_token;
 
         if (!token) {
-            console.error("Not authenticated")
-            return
+            console.error("Not authenticated");
+            return;
         }
 
-        setSavingTitle(true)
+        setSavingTitle(true);
 
         try {
-
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}`,
                 {
                     method: "PATCH",
 
                     headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
                     },
 
                     body: JSON.stringify({
-                        title: newTitle
-                    })
-                }
-            )
+                        title: newTitle,
+                    }),
+                },
+            );
 
             if (!response.ok) {
-                console.error("Failed to rename conversation")
-                return
+                console.error("Failed to rename conversation");
+                return;
             }
 
-            const data = await response.json()
+            const data = await response.json();
 
-            setChatTitle(data.title || newTitle)
-            setEditingTitle(false)
-
+            setChatTitle(data.title || newTitle);
+            setEditingTitle(false);
         } catch (error) {
-
-            console.error("Rename error:", error)
-
+            console.error("Rename error:", error);
         } finally {
-
-            setSavingTitle(false)
-
+            setSavingTitle(false);
         }
     }
 
-    // -------------------------
-    // Send message
-    // -------------------------
-
     async function handleSubmit() {
-
         if (!input.trim() || loading) {
-            return
+            return;
         }
 
-        const content = input.trim()
+        const content = input.trim();
 
         const {
-            data: { session }
-        } = await supabase.auth.getSession()
+            data: { session },
+        } = await supabase.auth.getSession();
 
-        const token = session?.access_token
+        const token = session?.access_token;
 
         if (!token) {
-            setMessages(prev => [
+            setMessages((prev) => [
                 ...prev,
                 {
                     role: "assistant",
-                    content: "You are not authenticated."
-                }
-            ])
+                    content: "You are not authenticated.",
+                },
+            ]);
 
-            return
+            return;
         }
 
-        setMessages(prev => [
+        setMessages((prev) => [
             ...prev,
             {
                 role: "user",
-                content
-            }
-        ])
+                content,
+            },
+        ]);
 
-        setInput("")
-        setLoading(true)
+        setInput("");
+        setLoading(true);
 
         try {
-
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/messages/`,
                 {
                     method: "POST",
 
                     headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
                     },
 
                     body: JSON.stringify({
                         conversation_id: id,
-                        content
-                    })
-                }
-            )
+                        content,
+                    }),
+                },
+            );
 
             if (!response.ok) {
-
-                setMessages(prev => [
+                setMessages((prev) => [
                     ...prev,
                     {
                         role: "assistant",
-                        content: "Something went wrong, please try later."
-                    }
-                ])
+                        content: "Something went wrong, please try later.",
+                    },
+                ]);
 
-                return
+                return;
             }
 
-            const data = await response.json()
+            const data = await response.json();
 
-            setMessages(prev => [
+            setMessages((prev) => [
                 ...prev,
                 {
                     role: "assistant",
-                    content: data.response
-                }
-            ])
-
+                    content: data.response,
+                },
+            ]);
         } catch (error) {
+            console.error("Message error:", error);
 
-            console.error("Message error:", error)
-
-            setMessages(prev => [
+            setMessages((prev) => [
                 ...prev,
                 {
                     role: "assistant",
-                    content: "Something went wrong, please try later."
-                }
-            ])
-
+                    content: "Something went wrong, please try later.",
+                },
+            ]);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     }
 
-
     return (
-
         <div className="h-screen bg-gray-950 flex">
-
-
             {/* =========================
                 CHAT
             ========================= */}
 
             <div
-                className={`h-full flex flex-col transition-all duration-300 ${splitView
-                    ? "flex-1"
-                    : "w-full max-w-4xl mx-auto"
+                className={`h-full flex flex-col transition-all duration-300 ${splitView ? "flex-1" : "w-full max-w-4xl mx-auto"
                     }`}
             >
-
-
                 {/* Header */}
 
                 <div className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-
                     <div className="group flex items-center gap-2">
-
                         {editingTitle ? (
-
                             <input
                                 autoFocus
                                 type="text"
                                 value={titleInput}
                                 onChange={(e) => setTitleInput(e.target.value)}
                                 onKeyDown={(e) => {
-
                                     if (e.key === "Enter") {
-                                        e.preventDefault()
-                                        saveTitle()
+                                        e.preventDefault();
+                                        saveTitle();
                                     }
 
                                     if (e.key === "Escape") {
-                                        setEditingTitle(false)
-                                        setTitleInput(chatTitle)
+                                        setEditingTitle(false);
+                                        setTitleInput(chatTitle);
                                     }
-
                                 }}
                                 disabled={savingTitle}
                                 className="text-2xl font-bold text-gray-100 bg-transparent border-b border-gray-600 outline-none w-[300px]"
                             />
-
                         ) : (
-
                             <>
                                 <h1 className="text-2xl font-bold text-gray-100">
                                     {chatTitle}
@@ -479,8 +399,8 @@ export default function ChatPage({
 
                                 <button
                                     onClick={() => {
-                                        setTitleInput(chatTitle)
-                                        setEditingTitle(true)
+                                        setTitleInput(chatTitle);
+                                        setEditingTitle(true);
                                     }}
                                     className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-gray-200"
                                     title="Edit conversation name"
@@ -489,104 +409,69 @@ export default function ChatPage({
                                     ✎
                                 </button>
                             </>
-
                         )}
-
                     </div>
 
                     <button
                         onClick={() => setSplitView(!splitView)}
                         className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-100"
                     >
-                        {splitView
-                            ? "Hide Documents"
-                            : "Show Documents"}
+                        {splitView ? "Hide Documents" : "Show Documents"}
                     </button>
-
                 </div>
-
 
                 {/* Messages */}
 
                 <div className="flex-1 overflow-y-auto px-6 py-6 text-gray-100">
-
                     {messages.length > 0 ? (
-
                         <div className="flex flex-col gap-4">
-
                             {messages.map((message, index) => (
-
                                 <div
                                     key={index}
-                                    className={`flex ${message.role === "user"
-                                        ? "justify-end"
-                                        : "justify-start"
+                                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"
                                         }`}
                                 >
-
                                     <div
                                         className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === "user"
                                             ? "bg-gray-700"
                                             : "bg-gray-900 border border-gray-800"
                                             }`}
                                     >
-
                                         <p className="text-sm text-gray-400 capitalize">
                                             {message.role}
                                         </p>
 
                                         <div className="mt-1 prose prose-invert prose-sm max-w-none">
-
-                                            <ReactMarkdown>
-                                                {message.content}
-                                            </ReactMarkdown>
-
+                                            <ReactMarkdown>{message.content}</ReactMarkdown>
                                         </div>
-
                                     </div>
-
                                 </div>
-
                             ))}
 
                             <div ref={bottomRef} />
-
                         </div>
-
                     ) : (
-
-                        <p className="text-gray-400">
-                            No messages yet.
-                        </p>
-
+                        <p className="text-gray-400">No messages yet.</p>
                     )}
-
                 </div>
-
 
                 {/* Input */}
 
                 <div className="border-t border-gray-800 px-6 py-4">
-
                     <div className="flex gap-3">
-
                         <input
                             className="flex-1 bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 text-gray-100 outline-none"
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => {
-
                                 if (e.key === "Enter") {
-
-                                    e.preventDefault()
+                                    e.preventDefault();
 
                                     if (!loading && input.trim()) {
-                                        handleSubmit()
+                                        handleSubmit();
                                     }
-
                                 }
-
                             }}
                             placeholder="Type your message..."
                         />
@@ -596,48 +481,100 @@ export default function ChatPage({
                             disabled={loading}
                             className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed text-gray-100 rounded-xl py-3 px-6 flex items-center justify-center min-w-24"
                         >
-
                             {loading ? (
-
                                 <div className="h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-
                             ) : (
-
                                 "Send"
-
                             )}
-
                         </button>
-
                     </div>
-
                 </div>
-
             </div>
 
-
             {/* =========================
-                DOCUMENT PANEL
-            ========================= */}
+    DOCUMENT PANEL
+========================= */}
 
             {splitView && (
+                <div className="w-[45%] min-w-[420px] max-w-[45%] h-full border-l border-gray-800 bg-gray-900 flex flex-col overflow-hidden transition-all duration-300">
 
-                <div className="w-[45%] min-w-[420px] h-full border-l border-gray-800 bg-gray-900 flex flex-col">
-
-
-                    {/* Document list */}
+                    {/* Document header */}
 
                     <div className="border-b border-gray-800 p-4">
 
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-lg font-semibold text-gray-100">
+                        <div className="flex items-center gap-3 min-w-0">
+
+                            <h2 className="text-lg font-semibold text-gray-100 whitespace-nowrap">
                                 Documents
                             </h2>
+
+                            <div className="relative flex-1 min-w-0 w-0">
+
+                                <button
+                                    type="button"
+                                    onClick={() => setDocumentMenuOpen((prev) => !prev)}
+                                    className="w-full min-w-0 flex items-center justify-between gap-2 bg-gray-800 border border-gray-700 hover:bg-gray-750 text-gray-200 text-sm rounded-lg px-3 py-2 outline-none transition"
+                                >
+                                    <span className="min-w-0 truncate">
+                                        {selectedDocument?.name ?? "None"}
+                                    </span>
+
+                                    <ChevronDown
+                                        size={16}
+                                        className={`shrink-0 transition-transform ${documentMenuOpen ? "rotate-180" : ""
+                                            }`}
+                                    />
+                                </button>
+
+                                {documentMenuOpen && (
+                                    <div className="absolute z-50 top-full left-0 mt-2 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+
+                                        <div className="max-h-64 overflow-y-auto">
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedDocument(null)
+                                                    setPdfUrl("")
+                                                    setDocumentMenuOpen(false)
+                                                }}
+                                                className={`w-full text-left px-3 py-2 text-sm transition ${!selectedDocument
+                                                        ? "bg-gray-700 text-gray-100"
+                                                        : "text-gray-300 hover:bg-gray-700"
+                                                    }`}
+                                            >
+                                                None
+                                            </button>
+
+                                            {documents.map((document) => (
+                                                <button
+                                                    key={document.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        openDocument(document)
+                                                        setDocumentMenuOpen(false)
+                                                    }}
+                                                    className={`w-full text-left px-3 py-2 text-sm truncate transition ${selectedDocument?.id === document.id
+                                                            ? "bg-gray-700 text-gray-100"
+                                                            : "text-gray-300 hover:bg-gray-700"
+                                                        }`}
+                                                    title={document.name}
+                                                >
+                                                    {document.name}
+                                                </button>
+                                            ))}
+
+                                        </div>
+
+                                    </div>
+                                )}
+
+                            </div>
 
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={uploading}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-600 text-gray-200 text-xl transition"
+                                className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-600 text-gray-200 text-xl transition"
                                 title="Add document"
                                 aria-label="Add document"
                             >
@@ -647,6 +584,7 @@ export default function ChatPage({
                                     "+"
                                 )}
                             </button>
+
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -654,54 +592,12 @@ export default function ChatPage({
                                 onChange={handleUpload}
                                 className="hidden"
                             />
+
                         </div>
-
-
-                        {documents.length === 0 ? (
-
-                            <p className="text-sm text-gray-500">
-                                No documents uploaded.
-                            </p>
-
-                        ) : (
-
-                            <div className="flex flex-col gap-2">
-
-                                {documents.map(document => (
-
-                                    <button
-                                        key={document.id}
-                                        onClick={() => openDocument(document)}
-                                        className={`w-full text-left px-3 py-3 rounded-lg transition ${selectedDocument?.id === document.id
-                                            ? "bg-gray-700 text-gray-100"
-                                            : "bg-gray-800 hover:bg-gray-750 text-gray-300"
-                                            }`}
-                                    >
-
-                                        <div className="flex items-center gap-3">
-
-                                            <span className="text-lg">
-                                                📄
-                                            </span>
-
-                                            <span className="text-sm truncate">
-                                                {document.name}
-                                            </span>
-
-                                        </div>
-
-                                    </button>
-
-                                ))}
-
-                            </div>
-
-                        )}
 
                     </div>
 
-
-                    {/* PDF viewer */}
+                    {/* PDF editor */}
 
                     <div className="flex-1 min-h-0">
 
@@ -711,7 +607,7 @@ export default function ChatPage({
 
                                 <div>
                                     <p className="text-gray-400 mb-1">
-                                        Select a document
+                                        No document selected
                                     </p>
 
                                     <p>
@@ -724,21 +620,17 @@ export default function ChatPage({
                         ) : loadingPdf ? (
 
                             <div className="h-full flex items-center justify-center text-gray-400">
-
                                 Loading document...
-
                             </div>
 
                         ) : pdfUrl ? (
 
-                            <PdfViewer url={pdfUrl} />
+                            <PdfEditor url={pdfUrl} />
 
                         ) : (
 
                             <div className="h-full flex items-center justify-center text-gray-400">
-
                                 Unable to load document.
-
                             </div>
 
                         )}
@@ -746,9 +638,7 @@ export default function ChatPage({
                     </div>
 
                 </div>
-
             )}
-
         </div>
-    )
+    );
 }
