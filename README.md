@@ -1,6 +1,6 @@
 # What is Ragnar?
 
-Ragnar is a RAG-powered document chat application. It allows users to upload multiple PDFs to a conversation, analyze them, and make queries about their contents.
+Ragnar is a RAG-powered document chat application. It allows users to upload multiple PDFs to a conversation, analyze them, make queries about their contents, and edit the uploaded PDFs directly.
 
 It follows the traditional RAG pipeline, but not in the strict way. Instead of shutting down to document-only answers, it can answer generally while maintaining confidence and being transparent when it generalized a response instead of getting it from the documents.
 
@@ -11,6 +11,7 @@ Currently, Ragnar supports PDFs and has an OCR fallback for scanned PDFs. Instea
 | Layer          | Technology                           |
 | -------------- | ------------------------------------ |
 | Frontend       | Next.js                              |
+| PDF Editor     | ComPDFKit WebViewer                  |
 | Backend API    | FastAPI                              |
 | Authentication | Supabase Auth                        |
 | File Storage   | Supabase Storage                     |
@@ -43,7 +44,8 @@ npm run dev
 * Main
 
   * Uploading multiple PDFs per conversation.
-  * Viewing uploaded PDFs directly in the chat.
+  * Viewing and editing uploaded PDFs directly in the chat.
+  * Saving edited PDFs in place of the original.
   * Summarizing documents.
   * Chatting with context from uploaded documents.
   * Follow-up abilities and basic per-chat memory.
@@ -54,6 +56,7 @@ npm run dev
   * Rename conversations.
   * Delete conversations.
   * Add documents without leaving the current chat.
+  * Loading states while PDFs are being opened.
 
 # ENV Variables
 
@@ -124,6 +127,10 @@ The model can answer using retrieved document context or general knowledge when 
 ### 10. Conversation Storage
 
 The generated response is saved in the conversation history, allowing future questions to maintain context and enabling multi-turn interactions. Conversations can also be renamed or deleted.
+
+### 11. PDF Editing
+
+Uploaded PDFs can be opened in the integrated ComPDFKit WebViewer. Users can edit the document directly within the conversation and save the edited PDF, replacing the existing file in Supabase Storage.
 
 ## Overall Flow
 
