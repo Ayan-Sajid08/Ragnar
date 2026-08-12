@@ -442,13 +442,15 @@ export default function ChatPage({
     }
 
     return (
-        <div className="h-screen bg-gray-950 flex">
+        <div className="h-screen w-full overflow-hidden bg-gray-950 flex">
             {/* =========================
                 CHAT
             ========================= */}
 
             <div
-                className={`h-full flex flex-col transition-all duration-300 ${splitView ? "flex-1" : "w-full max-w-4xl mx-auto"
+                className={`h-full min-w-0 overflow-hidden flex flex-col transition-all duration-300 ${splitView
+                        ? "flex-1"
+                        : "w-full max-w-4xl mx-auto"
                     }`}
             >
                 {/* Header */}
@@ -580,7 +582,7 @@ export default function ChatPage({
 ========================= */}
 
             {splitView && (
-                <div className="w-[45%] min-w-[420px] max-w-[45%] h-full border-l border-gray-800 bg-gray-900 flex flex-col overflow-hidden transition-all duration-300">
+                <div className="w-[45%] min-w-[420px] h-full min-h-0 overflow-hidden border-l border-gray-800 bg-gray-900 flex flex-col transition-all duration-300">
 
                     {/* Document header */}
 
@@ -708,7 +710,7 @@ export default function ChatPage({
 
                     {/* PDF editor */}
 
-                    <div className="flex-1 min-h-0">
+                    <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
 
                         {!selectedDocument ? (
 
