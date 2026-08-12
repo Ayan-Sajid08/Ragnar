@@ -14,10 +14,11 @@ export type PdfEditorHandle = {
 
 type PdfEditorProps = {
     url: string;
+    onLoaded?: () => void;
 };
 
 const PdfEditor = forwardRef<PdfEditorHandle, PdfEditorProps>(
-    function PdfEditor({ url }, ref) {
+    function PdfEditor({ url, onLoaded }, ref) {
         const viewerRef = useRef<HTMLDivElement>(null);
         const docViewerRef = useRef<any>(null);
 
@@ -55,6 +56,7 @@ const PdfEditor = forwardRef<PdfEditorHandle, PdfEditorProps>(
 
                 docViewer.addEvent("documentloaded", () => {
                     console.log("PDF LOADED!");
+                    onLoaded?.();
                 });
             });
         }, [url]);

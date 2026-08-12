@@ -56,7 +56,7 @@ export default function ChatPage({
 
     const [documentMenuOpen, setDocumentMenuOpen] = useState(false);
 
-    const pdfViewerRef = useRef<PdfEditorHandle>(null);
+    const pdfEditorRef = useRef<PdfEditorHandle>(null);
     const [savingPdf, setSavingPdf] = useState(false);
 
     async function fetchConversation() {
@@ -116,7 +116,7 @@ export default function ChatPage({
     }
 
     async function handleSavePdf() {
-        if (!selectedDocument || !pdfViewerRef.current || savingPdf) {
+        if (!selectedDocument || !pdfEditorRef.current || savingPdf) {
             return;
         }
 
@@ -124,7 +124,7 @@ export default function ChatPage({
 
         try {
             // Export the edited PDF from ComPDFKit
-            const editedPdf = await pdfViewerRef.current.exportPdf();
+            const editedPdf = await pdfEditorRef.current.exportPdf();
 
             // Replace the existing file in Supabase Storage
             const { error } = await supabase.storage
@@ -219,8 +219,6 @@ export default function ChatPage({
         if (data?.signedUrl) {
             setPdfUrl(data.signedUrl);
         }
-
-        setLoadingPdf(false);
     }
 
     useEffect(() => {
@@ -679,7 +677,6 @@ export default function ChatPage({
                                     ) : (
                                         <>
                                             <Save size={15} />
-                                            Save
                                         </>
                                     )}
                                 </button>
@@ -725,7 +722,7 @@ export default function ChatPage({
 
                     {/* PDF editor */}
 
-                    <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+                    <div className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
 
                         {!selectedDocument ? (
 
@@ -743,18 +740,21 @@ export default function ChatPage({
 
                             </div>
 
-                        ) : loadingPdf ? (
-
-                            <div className="h-full flex items-center justify-center text-gray-400">
-                                Loading document...
-                            </div>
-
                         ) : pdfUrl ? (
 
-                            <PdfEditor
-                                ref={pdfViewerRef}
-                                url={pdfUrl}
-                            />
+                            <>
+                                <PdfEditor
+                                    ref={pdfEditorRef}
+                                    url={pdfUrl}
+                                    onLoaded={() => setLoadingPdf(false)}
+                                />
+
+                                {loadingPdf && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-900 text-gray-400">
+                                        Loading document...
+                                    </div>
+                                )}
+                            </>
 
                         ) : (
 
