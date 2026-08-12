@@ -1,0 +1,1 @@
+declare module "@compdfkit_pdf_sdk/webviewer";

@@ -4,9 +4,10 @@ import { useState, useEffect, useRef, use } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import dynamic from "next/dynamic";
-import { ChevronDown, Trash2, Download } from "lucide-react"
+import { ChevronDown, Trash2, Save } from "lucide-react"
+import type { PdfEditorHandle } from "@/components/PdfEditor";
 
-const PdfViewer = dynamic(() => import("@/components/PdfViewer"), {
+const PdfEditor = dynamic(() => import("@/components/PdfEditor"), {
     ssr: false,
 });
 
@@ -54,6 +55,9 @@ export default function ChatPage({
     const [uploading, setUploading] = useState(false);
 
     const [documentMenuOpen, setDocumentMenuOpen] = useState(false);
+
+    const pdfViewerRef = useRef<PdfEditorHandle>(null);
+    const [savingPdf, setSavingPdf] = useState(false);
 
     async function fetchConversation() {
         const { data, error } = await supabase
@@ -108,6 +112,40 @@ export default function ChatPage({
 
         if (data) {
             setDocuments(data);
+        }
+    }
+
+    async function handleSavePdf() {
+        if (!selectedDocument || !pdfViewerRef.current || savingPdf) {
+            return;
+        }
+
+        setSavingPdf(true);
+
+        try {
+            // Export the edited PDF from ComPDFKit
+            const editedPdf = await pdfViewerRef.current.exportPdf();
+
+            // Replace the existing file in Supabase Storage
+            const { error } = await supabase.storage
+                .from("documents")
+                .upload(selectedDocument.file_url, editedPdf, {
+                    contentType: "application/pdf",
+                    upsert: true,
+                });
+
+            if (error) {
+                console.error("Error saving PDF:", error);
+                alert("Failed to save the document.");
+                return;
+            }
+
+            alert("Document saved successfully.");
+        } catch (error) {
+            console.error("Save PDF error:", error);
+            alert("Something went wrong while saving the document.");
+        } finally {
+            setSavingPdf(false);
         }
     }
 
@@ -319,38 +357,6 @@ export default function ChatPage({
         }
     }
 
-    async function handleDownloadDocument() {
-        if (!selectedDocument || !pdfUrl) return
-
-        try {
-            const response = await fetch(pdfUrl)
-
-            if (!response.ok) {
-                throw new Error("Failed to download document")
-            }
-
-            const blob = await response.blob()
-
-            const blobUrl = URL.createObjectURL(blob)
-
-            const link = document.createElement("a")
-            link.href = blobUrl
-            link.download = selectedDocument.name
-            link.style.display = "none"
-
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-
-            setTimeout(() => {
-                URL.revokeObjectURL(blobUrl)
-            }, 1000)
-
-        } catch (error) {
-            console.error("Download error:", error)
-        }
-    }
-
     async function handleSubmit() {
         if (!input.trim() || loading) {
             return;
@@ -449,8 +455,8 @@ export default function ChatPage({
 
             <div
                 className={`h-full min-w-0 overflow-hidden flex flex-col transition-all duration-300 ${splitView
-                        ? "flex-1"
-                        : "w-full max-w-4xl mx-auto"
+                    ? "flex-1"
+                    : "w-full max-w-4xl mx-auto"
                     }`}
             >
                 {/* Header */}
@@ -660,13 +666,22 @@ export default function ChatPage({
                             {selectedDocument && (
                                 <button
                                     type="button"
-                                    onClick={handleDownloadDocument}
-                                    disabled={!pdfUrl}
-                                    className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 disabled:text-gray-600 text-gray-300 transition"
-                                    title="Download document"
-                                    aria-label="Download document"
+                                    onClick={handleSavePdf}
+                                    disabled={savingPdf}
+                                    className="shrink-0 h-8 px-3 flex items-center gap-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-600 text-gray-200 text-sm transition"
+                                    title="Save document"
                                 >
-                                    <Download size={16} />
+                                    {savingPdf ? (
+                                        <>
+                                            <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                                            Saving
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={15} />
+                                            Save
+                                        </>
+                                    )}
                                 </button>
                             )}
 
@@ -736,7 +751,10 @@ export default function ChatPage({
 
                         ) : pdfUrl ? (
 
-                            <PdfViewer url={pdfUrl} />
+                            <PdfEditor
+                                ref={pdfViewerRef}
+                                url={pdfUrl}
+                            />
 
                         ) : (
 
