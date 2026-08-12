@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import dynamic from "next/dynamic";
 import { ChevronDown, Trash2, Download } from "lucide-react"
 
-const PdfEditor = dynamic(() => import("@/components/PdfEditor"), {
+const PdfViewer = dynamic(() => import("@/components/PdfViewer"), {
     ssr: false,
 });
 
@@ -736,7 +736,7 @@ export default function ChatPage({
 
                         ) : pdfUrl ? (
 
-                            <PdfEditor url={pdfUrl} />
+                            <PdfViewer url={pdfUrl} />
 
                         ) : (
 
