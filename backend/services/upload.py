@@ -19,17 +19,19 @@ async def upload_document(
         {"content-type": "application/pdf"}
     )
 
+    # Extract text and determine whether OCR was required
+    text_chunks, ocr_used = extract_text(pdf_bytes)
+
     doc_response = supabase.table("documents").insert({
         "user_id": user_id,
         "conversation_id": conversation_id,
         "name": filename,
         "file_url": file_path,
-        "file_type": "pdf"
+        "file_type": "pdf",
+        "ocr": ocr_used,
     }).execute()
 
     document_id = doc_response.data[0]["id"]
-
-    text_chunks = extract_text(pdf_bytes)
 
     contents = [chunk["content"] for chunk in text_chunks]
 
@@ -58,6 +60,7 @@ async def upload_document(
         "document_id": document_id,
     }
 
+
 async def edit_document(
     pdf_bytes: bytes,
     document_id: str,
@@ -82,10 +85,17 @@ async def edit_document(
 
     document = document_response.data
 
+    # --------------------------------------------------
+    # 2. Prevent editing scanned/OCR documents
+    # --------------------------------------------------
+
+    if document["ocr"]:
+        raise ValueError("Scanned PDFs cannot be edited")
+
     file_path = document["file_url"]
 
     # --------------------------------------------------
-    # 2. Replace PDF in Supabase Storage
+    # 3. Replace PDF in Supabase Storage
     # --------------------------------------------------
 
     supabase.storage.from_("documents").upload(
@@ -98,7 +108,7 @@ async def edit_document(
     )
 
     # --------------------------------------------------
-    # 3. Delete old chunks
+    # 4. Delete old chunks
     # --------------------------------------------------
 
     supabase.table("document_chunks").delete().eq(
@@ -107,16 +117,16 @@ async def edit_document(
     ).execute()
 
     # --------------------------------------------------
-    # 4. Extract text from edited PDF
+    # 5. Extract text from edited PDF
     # --------------------------------------------------
 
-    text_chunks = extract_text(pdf_bytes)
+    text_chunks, ocr_used = extract_text(pdf_bytes)
 
     if not text_chunks:
         raise ValueError("No text could be extracted from the PDF")
 
     # --------------------------------------------------
-    # 5. Generate new embeddings
+    # 6. Generate new embeddings
     # --------------------------------------------------
 
     contents = [
@@ -130,7 +140,7 @@ async def edit_document(
         chunk["embedding"] = embeddings[i]
 
     # --------------------------------------------------
-    # 6. Insert new chunks
+    # 7. Insert new chunks
     # --------------------------------------------------
 
     chunks_to_insert = []
@@ -146,6 +156,17 @@ async def edit_document(
 
     supabase.table("document_chunks").insert(
         chunks_to_insert
+    ).execute()
+
+    # --------------------------------------------------
+    # 8. Update OCR status
+    # --------------------------------------------------
+
+    supabase.table("documents").update({
+        "ocr": ocr_used,
+    }).eq(
+        "id",
+        document_id
     ).execute()
 
     return {

@@ -1,4 +1,4 @@
-import fitz # pymupdf
+import fitz  # pymupdf
 import numpy as np
 import cv2
 from services.mistral_ocr import extract_text_from_image
@@ -6,20 +6,28 @@ from services.mistral_ocr import extract_text_from_image
 CHUNK_SIZE = 2000
 CHUNK_OVERLAP = 400
 
-def extract_text(pdf_bytes : bytes) -> list[dict]:
+
+def extract_text(pdf_bytes: bytes):
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+
     text_chunks = []
     chunk_index = 0
+    ocr_used = False
+
     for page_num, page in enumerate(doc):
         text = page.get_text("text").strip()
 
-        if len(text) < 50: # If the extracted text is too short, perform OCR
+        if len(text) < 50:
+            ocr_used = True
             print(f"OCR page {page_num + 1}")
             text = ocr_page(page)
+
         chunks = chunk_text(text, page_num, chunk_index)
         text_chunks.extend(chunks)
         chunk_index += len(chunks)
-    return text_chunks
+
+    return text_chunks, ocr_used
+
 
 def ocr_page(page):
     pix = page.get_pixmap(dpi=150)
@@ -34,11 +42,20 @@ def ocr_page(page):
 
     return extract_text_from_image(img)
 
+
 def chunk_text(text: str, page_number: int, start_index: int) -> list[dict]:
     chunks = []
     chunk_index = start_index
+
     for i in range(0, len(text), CHUNK_SIZE - CHUNK_OVERLAP):
         chunk = text[i:i + CHUNK_SIZE]
-        chunks.append({"content": chunk, "page_number": page_number, "chunk_index": chunk_index})
+
+        chunks.append({
+            "content": chunk,
+            "page_number": page_number,
+            "chunk_index": chunk_index
+        })
+
         chunk_index += 1
+
     return chunks

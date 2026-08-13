@@ -17,6 +17,7 @@ type Document = {
     name: string;
     file_url: string;
     file_type: string;
+    ocr: boolean;
 };
 
 export default function ChatPage({
@@ -95,7 +96,7 @@ export default function ChatPage({
     async function fetchDocuments() {
         const { data, error } = await supabase
             .from("documents")
-            .select("id, name, file_url, file_type")
+            .select("id, name, file_url, file_type, ocr")
             .eq("conversation_id", id)
             .order("created_at", { ascending: true });
 
@@ -627,6 +628,11 @@ export default function ChatPage({
                                 <button
                                     type="button"
                                     onClick={() => {
+                                        if (selectedDocument.ocr) {
+                                            alert("Scanned PDFs cannot be edited.");
+                                            return;
+                                        }
+
                                         router.push(`/pdf-editor/${selectedDocument.id}`);
                                     }}
                                     className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xl transition"
