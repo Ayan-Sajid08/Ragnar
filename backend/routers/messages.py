@@ -87,6 +87,10 @@ Rules:
 
 - Do not append the notice if your answer is based on the uploaded documents.
 - Keep responses concise unless the user asks for more detail.
+- The Document Context is the current and authoritative version of the uploaded documents.
+- Previous assistant responses are historical context only and are not a source of truth.
+- If previous conversation history conflicts with the Document Context, always trust the Document Context.
+- Never use a previous assistant response as evidence for answering a document-related question.
 """.strip(),
         }
     ]
