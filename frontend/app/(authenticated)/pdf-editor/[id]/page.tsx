@@ -155,6 +155,7 @@ export default function PdfEditorPage() {
                                 process.env
                                     .NEXT_PUBLIC_COMPDFKIT_LICENSE ||
                                 "",
+                            theme: "dark",
                         },
                         viewerRef.current
                     );
@@ -163,7 +164,103 @@ export default function PdfEditorPage() {
 
                 viewerInstanceRef.current = instance;
 
+                instance.UI.setTheme("DARK");
+
+                instance.UI.setHeaderItems((header: any) => {
+                    header.push({
+                        type: "actionButton",
+                        dataElement: "customDownloadButton",
+                        title: "Download",
+                        img: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+            xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M14.3596 8.35973L10.7499 11.9694L10.7499 2C10.7499 1.58579 10.4142 1.25 9.99994 1.25C9.58573 1.25 9.24994 1.58579 9.24994 2L9.24994 11.9694L5.64024 8.35973C5.34735 8.06683 4.87247 8.06683 4.57958 8.35973C4.28669 8.65262 4.28669 9.12749 4.57958 9.42039L9.46961 14.3104C9.7625 14.6033 10.2374 14.6033 10.5303 14.3104L15.4203 9.42039C15.7132 9.12749 15.7132 9.12749 15.4203 8.35973ZM2.99994 16.1538C2.58573 16.1538 2.24994 16.4896 2.24994 16.9038C2.24994 17.318 2.58573 17.6538 2.99994 17.6538H17.3076C17.7218 17.6538 18.0576 17.318 18.0576 16.9038C18.0576 16.4896 17.7218 16.1538 17.3076 16.1538H2.99994Z"
+                fill="currentColor"
+            />
+        </svg>`,
+                        onClick: async () => {
+                            try {
+                                const pdfArrayBuffer =
+                                    await instance.docViewer.download();
+
+                                const blob = new Blob(
+                                    [pdfArrayBuffer],
+                                    {
+                                        type: "application/pdf",
+                                    }
+                                );
+
+                                const url =
+                                    URL.createObjectURL(blob);
+
+                                const a =
+                                    window.document.createElement("a");
+
+                                a.href = url;
+                                a.download = document.name.endsWith(".pdf")
+                                    ? document.name
+                                    : `${document.name}.pdf`;
+
+                                window.document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+
+                                URL.revokeObjectURL(url);
+                            } catch (error) {
+                                console.error(
+                                    "DOWNLOAD ERROR:",
+                                    error
+                                );
+                            }
+                        },
+                    });
+                    const items = header.getItems();
+
+                    const filteredItems = items.filter(
+                        (item: any) => item.type !== "divider"
+                    );
+
+                    header.update(filteredItems);
+                });
+
+                instance.docViewer.addEvent("documentloaded", () => {
+                    console.log(
+                        "PDF loaded. Current scale:",
+                        instance.docViewer.scale
+                    );
+
+                    instance.docViewer.webViewerScaleChanged(1);
+
+                    console.log(
+                        "New scale:",
+                        instance.docViewer.scale
+                    );
+                });
+
+                // Hide unnecessary toolbar groups
+                instance.UI.disableElements([
+                    "toolbarGroup-Measurement",
+                    "toolbarGroup-Security",
+                    "toolbarGroup-Compare",
+                    "toolbarGroup-Separation",
+                    "cropPageButton",
+                    "openFileButton",
+                    "flattenButton",
+                    "printButton",
+                    "theme",
+                    "theme",
+                    "pageModeButton",
+                    "settingButton",
+                    "leftPanelButton",
+                    "downloadButton",
+                    "fullScreenButton",
+                    "handToolButton",
+                ]);
+
                 setLoading(false);
+
             } catch (err) {
                 console.error(
                     "COMPDFKIT INITIALIZATION ERROR:",
@@ -272,21 +369,21 @@ export default function PdfEditorPage() {
     }
 
     return (
-        <main className="h-screen w-screen flex flex-col bg-[#f7f7f7]">
+        <main className="h-full w-full flex flex-col bg-[#f7f7f7] overflow-hidden">
             {/* Ragnar header */}
-            <header className="h-14 shrink-0 bg-white border-b border-gray-200 flex items-center justify-between px-5">
-                <div className="flex items-center gap-3">
+            <header className="h-14 shrink-0 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4">
+                <div className="flex items-center gap-4">
                     <button
                         onClick={() => router.back()}
-                        className="text-gray-500 hover:text-gray-900 text-xl transition"
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-gray-100 transition"
                         aria-label="Go back"
                     >
                         ←
                     </button>
 
-                    <div className="h-5 w-px bg-gray-200" />
+                    <div className="h-5 w-px bg-gray-700" />
 
-                    <h1 className="text-sm font-medium text-gray-800">
+                    <h1 className="text-sm font-medium text-gray-100">
                         Edit PDF
                     </h1>
                 </div>
@@ -294,11 +391,9 @@ export default function PdfEditorPage() {
                 <button
                     onClick={saveChanges}
                     disabled={saving || loading}
-                    className="px-4 py-1.5 rounded-md bg-black text-white text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 rounded-xl bg-gray-700 text-gray-100 text-sm font-medium hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {saving
-                        ? "Saving..."
-                        : "Save"}
+                    {saving ? "Saving..." : "Save"}
                 </button>
             </header>
 
@@ -310,7 +405,7 @@ export default function PdfEditorPage() {
             )}
 
             {/* Editor */}
-            <div className="relative flex-1 min-h-0">
+            <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
                 {loading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f7f7f7]">
                         <div className="text-center">
