@@ -1,15 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, use } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import dynamic from "next/dynamic";
-import { ChevronDown, Trash2, Save } from "lucide-react"
-import type { PdfEditorHandle } from "@/components/PdfEditor";
-
-const PdfEditor = dynamic(() => import("@/components/PdfEditor"), {
-    ssr: false,
-});
+import { ChevronDown, Trash2 } from "lucide-react"
 
 type Message = {
     role: string;
@@ -29,6 +25,7 @@ export default function ChatPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
+    const router = useRouter();
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
@@ -55,9 +52,6 @@ export default function ChatPage({
     const [uploading, setUploading] = useState(false);
 
     const [documentMenuOpen, setDocumentMenuOpen] = useState(false);
-
-    const pdfEditorRef = useRef<PdfEditorHandle>(null);
-    const [savingPdf, setSavingPdf] = useState(false);
 
     async function fetchConversation() {
         const { data, error } = await supabase
@@ -112,40 +106,6 @@ export default function ChatPage({
 
         if (data) {
             setDocuments(data);
-        }
-    }
-
-    async function handleSavePdf() {
-        if (!selectedDocument || !pdfEditorRef.current || savingPdf) {
-            return;
-        }
-
-        setSavingPdf(true);
-
-        try {
-            // Export the edited PDF from ComPDFKit
-            const editedPdf = await pdfEditorRef.current.exportPdf();
-
-            // Replace the existing file in Supabase Storage
-            const { error } = await supabase.storage
-                .from("documents")
-                .upload(selectedDocument.file_url, editedPdf, {
-                    contentType: "application/pdf",
-                    upsert: true,
-                });
-
-            if (error) {
-                console.error("Error saving PDF:", error);
-                alert("Failed to save the document.");
-                return;
-            }
-
-            alert("Document saved successfully.");
-        } catch (error) {
-            console.error("Save PDF error:", error);
-            alert("Something went wrong while saving the document.");
-        } finally {
-            setSavingPdf(false);
         }
     }
 
@@ -218,6 +178,8 @@ export default function ChatPage({
 
         if (data?.signedUrl) {
             setPdfUrl(data.signedUrl);
+        } else {
+            setLoadingPdf(false);
         }
     }
 
@@ -664,21 +626,14 @@ export default function ChatPage({
                             {selectedDocument && (
                                 <button
                                     type="button"
-                                    onClick={handleSavePdf}
-                                    disabled={savingPdf}
-                                    className="shrink-0 h-8 px-3 flex items-center gap-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-600 text-gray-200 text-sm transition"
-                                    title="Save document"
+                                    onClick={() => {
+                                        router.push(`/pdf-editor/${selectedDocument.id}`);
+                                    }}
+                                    className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xl transition"
+                                    title="Edit PDF"
+                                    aria-label="Edit PDF"
                                 >
-                                    {savingPdf ? (
-                                        <>
-                                            <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                                            Saving
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save size={15} />
-                                        </>
-                                    )}
+                                    ✎
                                 </button>
                             )}
 
@@ -720,7 +675,7 @@ export default function ChatPage({
 
                     </div>
 
-                    {/* PDF editor */}
+                    {/* PDF viewer */}
 
                     <div className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
 
@@ -743,15 +698,22 @@ export default function ChatPage({
                         ) : pdfUrl ? (
 
                             <>
-                                <PdfEditor
-                                    ref={pdfEditorRef}
-                                    url={pdfUrl}
-                                    onLoaded={() => setLoadingPdf(false)}
+                                <iframe
+                                    src={pdfUrl}
+                                    className="h-full w-full border-0"
+                                    title={selectedDocument.name || "PDF Preview"}
+                                    onLoad={() => setLoadingPdf(false)}
                                 />
 
                                 {loadingPdf && (
                                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-900 text-gray-400">
-                                        Loading document...
+                                        <div className="text-center">
+                                            <div className="h-6 w-6 mx-auto mb-3 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+
+                                            <p>
+                                                Loading document...
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
                             </>

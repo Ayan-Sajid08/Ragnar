@@ -37,6 +37,50 @@ async def upload_document(
         conversation_id=conversation_id,
     )
 
+@router.post("/{document_id}/edit")
+async def edit_document(
+    document_id: str,
+    file: UploadFile = File(...),
+    user=Depends(get_current_user)
+):
+    document_response = (
+        supabase
+        .table("documents")
+        .select("id")
+        .eq("id", document_id)
+        .eq("user_id", user.id)
+        .single()
+        .execute()
+    )
+
+    if not document_response.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    pdf_bytes = await file.read()
+
+    if not pdf_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded PDF is empty"
+        )
+
+    try:
+        return await upload.edit_document(
+            pdf_bytes=pdf_bytes,
+            document_id=document_id,
+            user_id=user.id,
+        )
+
+    except Exception as e:
+        print("EDIT DOCUMENT ERROR:", e)
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update document"
+        )
 
 @router.delete("/{document_id}")
 async def delete_document(
