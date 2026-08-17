@@ -15,9 +15,9 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
 
     return (
         <div className="flex h-screen">
-            <aside className="w-64 h-screen bg-gray-900 text-gray-100 flex flex-col justify-between p-4">
-                <div className="flex flex-col gap-4">
-                    <header className="flex items-center select-none">
+            <aside className="w-64 h-screen bg-gray-900 text-gray-100 flex flex-col p-4 overflow-hidden">
+                <div className="flex flex-col gap-4 flex-1 min-h-0">
+                    <header className="flex items-center select-none shrink-0">
                         <Image
                             src="/logo.png"
                             alt="Ragnar Logo"
@@ -25,16 +25,24 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                             height={50}
                             priority
                         />
+
                         <span className="-ml-4 text-2xl font-bold tracking-tight">
                             agnar
                         </span>
                     </header>
-                    <h3 className="ml-4 text-gray-400 text-xs">AI-Powered Document Assistant</h3>
-                    <NewChatButton />
-                    <nav>
+
+                    <h3 className="ml-4 text-gray-400 text-xs shrink-0">
+                        AI-Powered Document Assistant
+                    </h3>
+
+                    <div className="shrink-0">
+                        <NewChatButton />
+                    </div>
+
+                    <nav className="flex-1 min-h-0 overflow-y-auto pr-1">
                         {(conversations?.length ?? 0) > 0 ? (
                             <ul className="flex flex-col gap-2">
-                                {(conversations ?? []).map((conversation) => (
+                                {[...(conversations ?? [])].reverse().map((conversation) => (
                                     <li key={conversation.id}>
                                         <div className="flex items-center gap-1">
                                             <a
@@ -45,7 +53,9 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                                                     {conversation.title}
                                                 </span>
 
-                                                <DeleteButton conversationId={conversation.id} />
+                                                <DeleteButton
+                                                    conversationId={conversation.id}
+                                                />
                                             </a>
                                         </div>
                                     </li>
@@ -57,7 +67,9 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                     </nav>
                 </div>
 
-                <ProfileButton email={user?.email ?? ""} />
+                <div className="shrink-0 mt-4">
+                    <ProfileButton email={user?.email ?? ""} />
+                </div>
             </aside>
 
             <main className="h-screen bg-gray-950 text-gray-100 flex-1">
