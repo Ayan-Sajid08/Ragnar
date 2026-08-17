@@ -95,3 +95,6 @@ wcwidth==0.8.2
 websockets==15.0.1
 yarl==1.24.5
 zipp==4.1.0
+python-docx
+python-pptx
+openpyxl
