@@ -687,7 +687,7 @@ export default function ChatPage({
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="application/pdf"
+                                accept=".pdf,.txt,.md,.docx,.pptx,.xlsx,.csv"
                                 onChange={handleUpload}
                                 className="hidden"
                             />

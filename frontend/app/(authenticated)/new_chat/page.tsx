@@ -148,7 +148,7 @@ export default function NewChatPage() {
                 />
 
                 <label className="w-full border-2 border-dashed border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-gray-500 text-gray-400 hover:text-gray-300">
-                    <p>Click to select PDFs</p>
+                    <p>Click to select Documents</p>
 
                     <p className="text-sm mt-1">
                         {files.length === 0
