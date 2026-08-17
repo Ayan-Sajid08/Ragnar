@@ -39,11 +39,14 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                                         <div className="flex items-center gap-1">
                                             <a
                                                 href={`/chat/${conversation.id}`}
-                                                className="hover:bg-gray-700 text-gray-300 flex-1 hover:text-gray-100 rounded-lg py-2 px-4 text-sm truncate"
+                                                className="w-full h-12 hover:bg-gray-700 text-gray-300 flex items-center justify-between hover:text-gray-100 rounded-lg py-2 px-4 text-sm"
                                             >
-                                                {conversation.title}
+                                                <span className="truncate">
+                                                    {conversation.title}
+                                                </span>
+
+                                                <DeleteButton conversationId={conversation.id} />
                                             </a>
-                                            <DeleteButton conversationId={conversation.id} />
                                         </div>
                                     </li>
                                 ))}

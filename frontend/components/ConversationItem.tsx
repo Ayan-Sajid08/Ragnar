@@ -47,7 +47,7 @@ export default function DeleteButton({ conversationId }: { conversationId: strin
     return (
         <button
             onClick={handleDelete}
-            className="flex items-center gap-2 hover:bg-gray-600 text-gray-100 rounded-lg py-2 px-4 text-sm font-semibold"
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-900/50 text-gray-300 hover:text-red-400 transition"
         >
             <Trash2 size={16} />
         </button>

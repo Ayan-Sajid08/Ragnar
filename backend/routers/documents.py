@@ -28,11 +28,59 @@ async def upload_document(
             detail="Conversation not found"
         )
 
-    pdf_bytes = await file.read()
+    file_bytes = await file.read()
+
+    if not file_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is empty"
+        )
+
+    if not file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Filename is missing"
+        )
+
+    filename = file.filename
+
+    extension = (
+        filename.rsplit(".", 1)[-1].lower()
+        if "." in filename
+        else ""
+    )
+
+    supported_formats = {
+        "pdf",
+        "txt",
+        "md",
+        "docx",
+        "pptx",
+        "xlsx",
+        "csv",
+    }
+
+    if extension not in supported_formats:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format: .{extension}"
+        )
+
+    content_types = {
+        "pdf": "application/pdf",
+        "txt": "text/plain",
+        "md": "text/markdown",
+        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "csv": "text/csv",
+    }
 
     return await upload.upload_document(
-        pdf_bytes=pdf_bytes,
-        filename=file.filename,
+        file_bytes=file_bytes,
+        filename=filename,
+        file_type=extension,
+        content_type=content_types[extension],
         user_id=user.id,
         conversation_id=conversation_id,
     )

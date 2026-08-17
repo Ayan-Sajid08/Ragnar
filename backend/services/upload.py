@@ -1,13 +1,15 @@
 import time
 
 from database import supabase
-from services.pdf_processor import extract_text
+from services.document_processor import extract_document
 from services.embeddings import get_embeddings
 
 
 async def upload_document(
-    pdf_bytes: bytes,
+    file_bytes: bytes,
     filename: str,
+    file_type: str,
+    content_type: str,
     user_id: str,
     conversation_id: str,
 ):
@@ -15,25 +17,33 @@ async def upload_document(
 
     supabase.storage.from_("documents").upload(
         file_path,
-        pdf_bytes,
-        {"content-type": "application/pdf"}
+        file_bytes,
+        {"content-type": content_type}
     )
 
-    # Extract text and determine whether OCR was required
-    text_chunks, ocr_used = extract_text(pdf_bytes)
+    text_chunks, ocr_used = extract_document(
+        file_bytes,
+        file_type
+    )
+
+    if not text_chunks:
+        raise ValueError("No text could be extracted from the document")
 
     doc_response = supabase.table("documents").insert({
         "user_id": user_id,
         "conversation_id": conversation_id,
         "name": filename,
         "file_url": file_path,
-        "file_type": "pdf",
+        "file_type": file_type,
         "ocr": ocr_used,
     }).execute()
 
     document_id = doc_response.data[0]["id"]
 
-    contents = [chunk["content"] for chunk in text_chunks]
+    contents = [
+        chunk["content"]
+        for chunk in text_chunks
+    ]
 
     embeddings = await get_embeddings(contents)
 

@@ -158,7 +158,7 @@ export default function NewChatPage() {
 
                     <input
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,.txt,.md,.docx,.pptx,.xlsx,.csv"
                         multiple
                         onChange={handleFileChange}
                         disabled={loading}

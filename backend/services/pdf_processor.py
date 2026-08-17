@@ -2,9 +2,7 @@ import fitz  # pymupdf
 import numpy as np
 import cv2
 from services.mistral_ocr import extract_text_from_image
-
-CHUNK_SIZE = 2000
-CHUNK_OVERLAP = 400
+from services.chunker import chunk_text
 
 
 def extract_text(pdf_bytes: bytes):
@@ -41,21 +39,3 @@ def ocr_page(page):
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
     return extract_text_from_image(img)
-
-
-def chunk_text(text: str, page_number: int, start_index: int) -> list[dict]:
-    chunks = []
-    chunk_index = start_index
-
-    for i in range(0, len(text), CHUNK_SIZE - CHUNK_OVERLAP):
-        chunk = text[i:i + CHUNK_SIZE]
-
-        chunks.append({
-            "content": chunk,
-            "page_number": page_number,
-            "chunk_index": chunk_index
-        })
-
-        chunk_index += 1
-
-    return chunks

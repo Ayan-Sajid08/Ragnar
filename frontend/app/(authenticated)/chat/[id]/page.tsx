@@ -203,8 +203,23 @@ export default function ChatPage({
             return;
         }
 
-        if (file.type !== "application/pdf") {
-            alert("Please select a PDF file.");
+        const extension = file.name
+            .split(".")
+            .pop()
+            ?.toLowerCase();
+
+        const supportedFormats = [
+            "pdf",
+            "txt",
+            "md",
+            "docx",
+            "pptx",
+            "xlsx",
+            "csv",
+        ];
+
+        if (!extension || !supportedFormats.includes(extension)) {
+            alert("Please select a supported document format.");
             event.target.value = "";
             return;
         }
