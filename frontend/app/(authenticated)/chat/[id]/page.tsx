@@ -505,27 +505,47 @@ export default function ChatPage({
 
                 {/* Messages */}
 
-                <div className="flex-1 overflow-y-auto px-6 py-6 text-gray-100">
+                <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-6 text-gray-100">
                     {messages.length > 0 ? (
-                        <div className="flex flex-col gap-4">
+                        <div className="flex min-w-0 flex-col gap-4">
                             {messages.map((message, index) => (
                                 <div
                                     key={index}
-                                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"
+                                    className={`flex min-w-0 ${message.role === "user"
+                                            ? "justify-end"
+                                            : "justify-start"
                                         }`}
                                 >
                                     <div
-                                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === "user"
-                                            ? "bg-gray-700"
-                                            : "bg-gray-900 border border-gray-800"
+                                        className={`min-w-0 max-w-[80%] rounded-2xl px-4 py-3 ${message.role === "user"
+                                                ? "bg-gray-700"
+                                                : "bg-gray-900 border border-gray-800"
                                             }`}
                                     >
                                         <p className="text-sm text-gray-400 capitalize">
                                             {message.role}
                                         </p>
 
-                                        <div className="mt-1 prose prose-invert prose-sm max-w-none">
-                                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                                        <div className="mt-1 prose prose-invert prose-sm max-w-none break-words">
+                                            <ReactMarkdown
+                                                components={{
+                                                    pre: ({ children }) => (
+                                                        <pre className="my-3 max-w-full overflow-x-auto rounded-lg border border-gray-700 bg-gray-950 p-4">
+                                                            {children}
+                                                        </pre>
+                                                    ),
+
+                                                    code: ({ children, className }) => (
+                                                        <code
+                                                            className={`${className ?? ""} rounded bg-gray-800 px-1.5 py-0.5 font-mono text-sm`}
+                                                        >
+                                                            {children}
+                                                        </code>
+                                                    ),
+                                                }}
+                                            >
+                                                {message.content}
+                                            </ReactMarkdown>
                                         </div>
                                     </div>
                                 </div>
