@@ -44,19 +44,21 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
                             <ul className="flex flex-col gap-2">
                                 {[...(conversations ?? [])].reverse().map((conversation) => (
                                     <li key={conversation.id}>
-                                        <div className="flex items-center gap-1">
+                                        <div className="relative h-12 rounded-lg overflow-hidden hover:bg-gray-700 text-gray-300 hover:text-gray-100">
                                             <a
                                                 href={`/chat/${conversation.id}`}
-                                                className="w-full h-12 hover:bg-gray-700 text-gray-300 flex items-center justify-between hover:text-gray-100 rounded-lg py-2 px-4 text-sm"
+                                                className="w-full h-full flex items-center rounded-lg py-2 pl-4 pr-14 text-sm"
                                             >
                                                 <span className="truncate">
                                                     {conversation.title}
                                                 </span>
+                                            </a>
 
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                                 <DeleteButton
                                                     conversationId={conversation.id}
                                                 />
-                                            </a>
+                                            </div>
                                         </div>
                                     </li>
                                 ))}
