@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef, use, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
@@ -53,6 +53,21 @@ export default function ChatPage({
     const [uploading, setUploading] = useState(false);
 
     const [documentMenuOpen, setDocumentMenuOpen] = useState(false);
+
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+        setInput(e.target.value);
+
+        e.target.style.height = "auto";
+        e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+    };
+
+    useEffect(() => {
+        if (!input && textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+        }
+    }, [input]);
 
     async function fetchConversation() {
         const { data, error } = await supabase
@@ -527,13 +542,13 @@ export default function ChatPage({
 
                 <div className="border-t border-gray-800 px-6 py-4">
                     <div className="flex gap-3">
-                        <input
-                            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 text-gray-100 outline-none"
-                            type="text"
+                        <textarea
+                            ref={textareaRef}
+                            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 text-gray-100 outline-none resize-none overflow-y-auto"
                             value={input}
-                            onChange={(e) => setInput(e.target.value)}
+                            onChange={handleInputChange}
                             onKeyDown={(e) => {
-                                if (e.key === "Enter") {
+                                if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
 
                                     if (!loading && input.trim()) {
@@ -542,6 +557,7 @@ export default function ChatPage({
                                 }
                             }}
                             placeholder="Type your message..."
+                            rows={1}
                         />
 
                         <button
