@@ -20,6 +20,8 @@ Ragnar supports multiple document formats, including PDFs, TXT, Markdown, DOCX, 
 | Embeddings | OpenRouter Embedding Model |
 | LLM | OpenRouter Chat Models |
 | OCR | MistralOCR |
+| Web Capture | Playwright + Browserless |
+| Browser Engine | Chromium |
 
 # Setup
 
@@ -63,6 +65,28 @@ Structured documents preserve useful structural information during extraction. F
 - CSV files preserve rows and columns by joining cell values.
 - PDF files preserve page numbers.
 
+# Web Capture
+
+Ragnar can capture webpages using Playwright connected to a remote Chromium browser through Browserless.
+
+The browser runs remotely rather than inside the FastAPI Cloud runtime. This avoids requiring Chromium's native Linux dependencies in the Ragnar backend environment.
+
+Web Capture currently supports two modes:
+
+- **Long** — captures the entire webpage as a single full-page screenshot.
+- **Parts** — captures multiple viewport-sized screenshots while scrolling through the webpage.
+
+The capture process:
+
+1. The requested URL is sent to the FastAPI backend.
+2. Playwright connects to a Browserless Chromium instance.
+3. The webpage is loaded and rendered.
+4. The page title and screenshots are captured.
+5. Screenshots are uploaded to Supabase Storage.
+6. A web_captures database record is created containing the capture metadata and screenshot paths.
+
+Web Capture uses Playwright for browser automation, allowing JavaScript-heavy webpages to be rendered before screenshots are taken.
+
 # Features
 
 - Main
@@ -79,6 +103,9 @@ Structured documents preserve useful structural information during extraction. F
     - Follow-up abilities and basic per-chat memory.
     - General questions when appropriate.
     - Semantic vector search across multiple documents.
+	- Capturing webpages as screenshots.
+	- Full-page webpage capture.
+	- Multi-part webpage capture through automatic scrolling.
 - QoL
     
     - Autoscroll.
@@ -99,6 +126,7 @@ Structured documents preserve useful structural information during extraction. F
     - OPENROUTER_API_KEY
     - OPENROUTER_MODEL
     - OPENROUTER_EMBEDDING_MODEL
+	- BROWSERLESS_TOKEN
 - Frontend
     
     - NEXT_PUBLIC_SUPABASE_URL
@@ -203,7 +231,7 @@ The generated response is saved in the conversation history, allowing future que
 
 Conversations can also be renamed or deleted. New conversations can be created without leaving the current application.
 
-### 11\. PDF Editing
+### 12\. PDF Editing
 
 Supported PDFs can be opened in the integrated ComPDFKit WebViewer.
 
@@ -213,7 +241,21 @@ After an edited PDF is saved, it can be processed again so that its extracted te
 
 Scanned PDFs detected through the OCR process are identified separately and are not treated as editable PDFs.
 
+### 13\. Web Capture
+The frontend sends a webpage URL and capture mode to the FastAPI backend.
+
+The backend uses the Playwright Python client to connect to a remote Chromium browser provided by Browserless.
+
+The browser loads and renders the webpage before taking screenshots.
+
+For long captures, the entire webpage is saved as one full-page screenshot.
+
+For parts captures, Ragnar takes viewport-sized screenshots while automatically scrolling through the webpage, up to the configured maximum number of scrolls.
+
+The resulting screenshots are uploaded to the web_capture Supabase Storage bucket, and metadata is stored in the web_captures table.
+
 ## Overall Flow
+### Document RAG Flow
 
 ```text
 Upload Document
@@ -272,4 +314,44 @@ Select Document Processor
                                           │
                                           ▼
                                      Return Answer
+```
+
+### Web Capture Flow
+```
+Enter Webpage URL
+        │
+        ▼
+   Select Capture Mode
+        │
+        ▼
+   FastAPI Backend
+        │
+        ▼
+ Playwright Client
+        │
+        │ WebSocket
+        ▼
+    Browserless
+        │
+        ▼
+ Remote Chromium
+        │
+        ▼
+ Render Webpage
+        │
+        ├───────────────┐
+        │               │
+      Long            Parts
+        │               │
+        ▼               ▼
+ Full-page       Scroll + Capture
+ Screenshot       Multiple Screenshots
+        │               │
+        └───────┬───────┘
+                │
+                ▼
+       Upload to Supabase
+                │
+                ▼
+       Store Capture Metadata
 ```
