@@ -98,3 +98,4 @@ zipp==4.1.0
 python-docx
 python-pptx
 openpyxl
+playwright==1.62.0

@@ -30,30 +30,30 @@ export default function ProfileButton({ email }: { email: string }) {
     return (
         <div ref={ref}>
             <button
-    onClick={() => setOpen(!open)}
-    className="border-t border-gray-700 pt-4 w-full text-left"
->
-    <div className="flex items-center justify-between text-gray-400 hover:text-gray-100">
-        <p className="text-lg">
-            Profile
-        </p>
+                onClick={() => setOpen(!open)}
+                className="border-t border-gray-700 pt-4 w-full text-left"
+            >
+                <div className="flex items-center justify-between text-gray-400 hover:text-gray-100">
+                    <p className="text-lg">
+                        Profile
+                    </p>
 
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="w-5 h-5"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"
-            />
-        </svg>
-    </div>
-</button>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="w-5 h-5"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"
+                        />
+                    </svg>
+                </div>
+            </button>
 
             {open && (
                 <div className="flex flex-col gap-2 mt-2">

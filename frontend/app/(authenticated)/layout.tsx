@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import ProfileButton from "@/components/ProfileButton"
 import Image from "next/image"
 import ConversationList from "@/components/ConversationsList"
+import WebCaptureButton from "@/components/WebCaptureButton"
 
 export default async function AuthenticatedLayout({
     children,
@@ -36,8 +37,14 @@ export default async function AuthenticatedLayout({
                     AI-Powered Document Assistant
                 </h3>
 
-                <div className="mt-4 shrink-0">
-                    <NewChatButton />
+                <div className="mt-4 shrink-0 space-y-2">
+                    <div>
+                        <NewChatButton />
+                    </div>
+
+                    <div>
+                        <WebCaptureButton />
+                    </div>
                 </div>
 
                 {/* Conversations */}
