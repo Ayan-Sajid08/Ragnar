@@ -1,44 +1,13 @@
-import os
-import subprocess
-import sys
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
 from config import settings
 from routers import documents
 from routers import messages
 from routers.conversations import router as conversations_router
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 from routers.web import router as web_router
-
-
-def ensure_playwright_browser():
-    from playwright.sync_api import sync_playwright
-
-    with sync_playwright() as p:
-        chromium_path = p.chromium.executable_path
-
-    if not os.path.exists(chromium_path):
-        print("Chromium not found. Installing Playwright Chromium...")
-
-        subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "playwright",
-                "install",
-                "chromium",
-            ],
-            check=True,
-        )
-
-        print("Playwright Chromium installed.")
-    else:
-        print("Playwright Chromium already installed.")
-
-
-ensure_playwright_browser()
 
 
 app = FastAPI()

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     openrouter_embedding_model: str
     mistral_api_key: str
     mistral_ocr_model: str = "mistral-ocr-latest"
+    browserless_token: str
 
     class Config:
         env_file = ".env"

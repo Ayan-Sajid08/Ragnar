@@ -62,7 +62,9 @@ async def capture_website(
         name = f"{domain}_{timestamp}"
 
         async with async_playwright() as p:
-            browser = await p.chromium.launch()
+            browser = await p.chromium.connect(
+                f"wss://production-sfo.browserless.io/chromium/playwright?token={settings.browserless_token}"
+            )
 
             page = await browser.new_page(
                 viewport={
